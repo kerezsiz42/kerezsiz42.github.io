@@ -15,7 +15,7 @@ export const QRCode = ({ text, className }: QRCodeProps) => {
       {
         type: "svg",
         errorCorrectionLevel: "low",
-        color: { dark: "#ffffffff", light: "#000000ff" },
+        margin: 1,
       },
       (_, svg) => {
         if (svg === undefined) {

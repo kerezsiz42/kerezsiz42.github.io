@@ -20,13 +20,13 @@ export const Chat = () => (
       </a>
     </div>
     <div className="flex-1"></div>
-    <div className="border-gray-500 flex items-center border-t py-4 px-1 w-full">
+    <div className="border-gray-500 flex items-center border-t py-4 px-2 w-full">
       <input
         className="bg-black border border-white focus:outline-none w-full px-3 py-2 rounded-[2rem]"
         type="text"
         placeholder="Type your message..."
       ></input>
-      <i className="fa-solid fa-paper-plane py-2 text-xl pr-3 pl-6"></i>
+      <i className="fa-solid fa-paper-plane py-2 text-2xl pr-3 pl-6"></i>
     </div>
   </Layout>
 );
