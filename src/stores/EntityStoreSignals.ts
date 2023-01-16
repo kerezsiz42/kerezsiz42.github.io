@@ -16,11 +16,11 @@ interface NotiDB extends DBSchema {
   };
 }
 
-const db = await openDB<NotiDB>("noti-db", 1, {
-  upgrade(db) {
-    db.createObjectStore("entities");
-  },
-});
+// const db = await openDB<NotiDB>("noti-db", 1, {
+//   upgrade(db) {
+//     db.createObjectStore("entities");
+//   },
+// });
 
 export const selectedConversation = signal<Entity | undefined>(undefined);
 export const conversations = signal<Entity[]>([]);

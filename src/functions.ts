@@ -12,13 +12,13 @@ export const publicKeyToBase64 = async (
   publicKey: CryptoKey
 ): Promise<string> => {
   const arrayBuffer = await crypto.subtle.exportKey("spki", publicKey);
-  return btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+  return window.btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
 };
 
 export const base64ToPublicKey = async (
   publicKey: string
 ): Promise<CryptoKey> => {
-  const bytes = atob(publicKey);
+  const bytes = window.atob(publicKey);
   const byteArray = new Uint8Array(bytes.length);
   for (let i = 0; i < bytes.length; i++) {
     byteArray[i] = bytes.charCodeAt(i);

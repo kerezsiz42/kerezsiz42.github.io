@@ -55,7 +55,7 @@ export class ReconnectingWebSocket {
       if (this.previousIsConnected === false && this.isConnected === false) {
         this.retryDelay *= 2;
       }
-      this.timeoutId = setTimeout(
+      this.timeoutId = window.setTimeout(
         () => this._connect(url),
         Math.min(MAX_RETRY_DELAY_MS, this.retryDelay)
       );
