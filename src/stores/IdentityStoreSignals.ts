@@ -1,9 +1,5 @@
 import { signal, effect } from "@preact/signals";
-import {
-  deserializeIdentity,
-  IDENTITY_STORAGE_NAME,
-  serializeIdentity,
-} from "../functions";
+import { IDENTITY_STORAGE_NAME, serializeIdentity } from "../functions";
 
 export type Identity = {
   publicKey: CryptoKey;

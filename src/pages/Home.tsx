@@ -1,42 +1,25 @@
-import { identity } from "../stores/IdentityStoreSignals";
 import { Layout } from "../components/Layout";
-import { useLocation } from "wouter-preact";
-import { IDENTITY_STORAGE_NAME } from "../functions";
+import { Link } from "wouter-preact";
 import { connected } from "../stores/WebSocketSignals";
+import { Chevron } from "../components/Chevron";
+import Menu from "../components/Menu";
 
 export const Home = () => {
-  const [_, setLocation] = useLocation();
-
   return (
     <Layout>
-      <span>Status: {connected.value ? "Connected" : "Not connected"}</span>
-      <a
-        className="font-bold border rounded border-white p-1 m-2 text-center"
-        href={`data:text/plain;charset=utf-8,${encodeURIComponent(
-          localStorage.getItem(IDENTITY_STORAGE_NAME) || ""
-        )}`}
-        download={`${crypto.randomUUID()}.json`}
-      >
-        Save identity
-      </a>
-      <button
-        type="button"
-        className="font-bold border rounded border-white p-1 m-2"
-        onClick={() => setLocation("/create")}
-      >
-        Create conversation
-      </button>
-      <button
-        type="button"
-        className="font-bold border rounded border-white p-1 m-2"
-        onClick={() => {
-          localStorage.removeItem(IDENTITY_STORAGE_NAME);
-          identity.value = undefined;
-          setLocation("/");
-        }}
-      >
-        Remove identity
-      </button>
+      <div class="flex items-center justify-between px-5 py-3 w-full">
+        <h1 class="font-bold text-2xl w-full">Conversations</h1>
+        <Chevron />
+      </div>
+      <Menu />
+      <div className="flex-1">
+        <span>Status: {connected.value ? "Connected" : "Not connected"}</span>
+      </div>
+      <Link href="/create">
+        <div className="absolute bg-blue-500 w-20 h-20 flex justify-center items-center rounded-[50%] cursor-pointer right-12 bottom-12">
+          <i className="fa-solid fa-plus text-3xl"></i>
+        </div>
+      </Link>
     </Layout>
   );
 };

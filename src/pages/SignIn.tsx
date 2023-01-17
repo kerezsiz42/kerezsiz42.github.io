@@ -1,13 +1,11 @@
 import { Layout } from "../components/Layout";
 import { identity } from "../stores/IdentityStoreSignals";
 import { useSignal } from "@preact/signals";
-import { useLocation } from "wouter-preact";
-import { generateIdentity, importIdentity, loadIdentity } from "../functions";
+import { generateIdentity, importIdentity } from "../functions";
 
-export const Index = () => {
+export const SignIn = () => {
   const username = useSignal<string>("");
   const error = useSignal<string>("");
-  const [_, setLocation] = useLocation();
 
   return (
     <Layout>
@@ -36,7 +34,6 @@ export const Index = () => {
               privateKey,
               username: username.value,
             };
-            setLocation("/home");
           }}
         >
           <label for="username">New username:</label>
@@ -76,7 +73,6 @@ export const Index = () => {
                   return;
                 }
                 identity.value = id;
-                setLocation("/home");
               }
             }}
           />

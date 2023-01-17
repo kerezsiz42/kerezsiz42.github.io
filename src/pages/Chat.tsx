@@ -1,3 +1,4 @@
+import { Link } from "wouter-preact";
 import { Layout } from "../components/Layout";
 import { selectedConversation } from "../stores/EntityStoreSignals";
 
@@ -15,9 +16,9 @@ export const Chat = () => (
           {selectedConversation.value?.displayName || "Loading..."}
         </h1>
       </div>
-      <a href="/authenticated/conversations">
+      <Link href="/">
         <i className="fa-solid fa-chevron-right text-xl"></i>
-      </a>
+      </Link>
     </div>
     <div className="flex-1"></div>
     <div className="border-gray-500 flex items-center border-t py-4 px-2 w-full">
