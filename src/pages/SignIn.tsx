@@ -1,5 +1,5 @@
 import { Layout } from "../components/Layout";
-import { identity } from "../stores/IdentityStoreSignals";
+import { identity, loading } from "../stores/IdentityStoreSignals";
 import { useSignal } from "@preact/signals";
 import {
   generateKeyPair,
@@ -27,9 +27,11 @@ export const SignIn = () => {
         ) : null}
         <form
           onSubmit={async (e) => {
+            loading.value = true;
             e.preventDefault();
             if (displayName.value === "") {
               error.value = "You must provide a username.";
+              loading.value = false;
               return;
             }
             const { publicKey, privateKey } = await generateKeyPair();
@@ -39,6 +41,7 @@ export const SignIn = () => {
               serializedPublicKey: await publicKeyToBase64(publicKey),
               displayName: displayName.value,
             };
+            loading.value = false;
           }}
         >
           <label for="username">New username:</label>
@@ -70,15 +73,18 @@ export const SignIn = () => {
             className="hidden"
             accept=".json"
             onChange={async ({ currentTarget }) => {
+              loading.value = true;
               if (currentTarget.files) {
                 const id = await importIdentity(currentTarget.files);
                 if (!id) {
                   error.value =
                     "Failed to import identity. Choose an exported json file that contains your identity.";
+                  loading.value = false;
                   return;
                 }
                 identity.value = id;
               }
+              loading.value = false;
             }}
           />
           Import indentity

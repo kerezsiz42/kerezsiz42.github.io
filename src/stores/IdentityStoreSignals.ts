@@ -10,6 +10,7 @@ export type Identity = {
 };
 
 export const identity = signal<Identity | undefined>(undefined);
+export const loading = signal<boolean>(false);
 
 effect(async () => {
   if (!identity.value) {

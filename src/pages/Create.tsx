@@ -14,7 +14,9 @@ export const Create = () => {
     const { serializedPublicKey, displayName } = identity.value;
     text.value = `${location.protocol}//${
       location.host
-    }/chat/${displayName}/${encodeURIComponent(serializedPublicKey)}`;
+    }/chat/${encodeURIComponent(displayName)}/${encodeURIComponent(
+      serializedPublicKey
+    )}`;
   }, [identity.value]);
 
   return (

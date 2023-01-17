@@ -5,6 +5,7 @@ import { Avatar } from "../components/Avatar";
 import { Layout } from "../components/Layout";
 import { base64ToPublicKey } from "../functions";
 import { Entity } from "../stores/EntityStoreSignals";
+import { loading } from "../stores/IdentityStoreSignals";
 
 type Optional<T extends Record<string, unknown>, U extends keyof T> = Omit<
   T,
@@ -23,11 +24,15 @@ export const Chat = ({
 
   useEffect(() => {
     const fn = async () => {
+      loading.value = true;
       if (serializedPublicKey === "" || displayName === "") {
         setLocation("/");
+        loading.value = false;
+        return;
       }
       const publicKey = await base64ToPublicKey(serializedPublicKey);
       entity.value = { publicKey, serializedPublicKey, displayName };
+      loading.value = false;
     };
     fn();
   }, []);

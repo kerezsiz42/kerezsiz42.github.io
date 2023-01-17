@@ -30,7 +30,7 @@ export const Home = () => {
       </div>
       <EntityList entities={entites.value} />
       <Link href="/create">
-        <div className="absolute bg-blue-500 w-20 h-20 flex justify-center items-center rounded-[50%] cursor-pointer right-12 bottom-12">
+        <div className="absolute bg-blue-500 w-20 h-20 flex justify-center items-center rounded-[50%] cursor-pointer right-10 bottom-10">
           <i className="fa-solid fa-plus text-3xl"></i>
         </div>
       </Link>
