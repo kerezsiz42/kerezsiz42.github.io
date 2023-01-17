@@ -50,12 +50,12 @@ export const importIdentity = (
 export const serializeIdentity = async ({
   publicKey,
   privateKey,
-  username,
+  displayName,
 }: Identity): Promise<string> => {
   return JSON.stringify({
     publicKey: await crypto.subtle.exportKey("jwk", publicKey),
     privateKey: await crypto.subtle.exportKey("jwk", privateKey),
-    username,
+    displayName,
   });
 };
 
@@ -63,31 +63,38 @@ export const deserializeIdentity = async (
   identityString: string
 ): Promise<Identity | undefined> => {
   const parsing = z
-    .object({ publicKey: z.any(), privateKey: z.any(), username: z.string() })
+    .object({
+      publicKey: z.any(),
+      privateKey: z.any(),
+      displayName: z.string(),
+    })
     .safeParse(JSON.parse(identityString));
   if (!parsing.success) {
     return undefined;
   }
+  const publicKey = await crypto.subtle.importKey(
+    "jwk",
+    parsing.data.publicKey,
+    ALGORITHM,
+    true,
+    ["encrypt"]
+  );
+  const privateKey = await crypto.subtle.importKey(
+    "jwk",
+    parsing.data.privateKey,
+    ALGORITHM,
+    true,
+    ["decrypt"]
+  );
   return {
-    publicKey: await crypto.subtle.importKey(
-      "jwk",
-      parsing.data.publicKey,
-      ALGORITHM,
-      true,
-      ["encrypt"]
-    ),
-    privateKey: await crypto.subtle.importKey(
-      "jwk",
-      parsing.data.privateKey,
-      ALGORITHM,
-      true,
-      ["decrypt"]
-    ),
-    username: parsing.data.username,
+    publicKey,
+    privateKey,
+    displayName: parsing.data.displayName,
+    serializedPublicKey: await publicKeyToBase64(publicKey),
   };
 };
 
-export const generateIdentity = async () => {
+export const generateKeyPair = async () => {
   return await crypto.subtle.generateKey(
     {
       name: "RSA-OAEP",

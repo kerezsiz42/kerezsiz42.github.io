@@ -1,27 +1,24 @@
-export {};
-/*
+import { Entity } from "../stores/EntityStoreSignals";
 import { Avatar } from "./Avatar";
 
-export const EntityList = () => {
+type EntityListProps = {
+  entities: Entity[];
+};
+
+export const EntityList = ({ entities }: EntityListProps) => {
   return (
-    <div>
-      {users.value.map((user, index) => (
+    <div className="flex-1">
+      {entities.map((entity, index) => (
         <div
-          class={`flex items-center justify-between border border-gray-500 rounded font-bold py-2 px-8 ${
-            index === users.value.length - 1 ? "" : "mb-3"
+          className={`flex items-center justify-between border border-gray-500 rounded font-bold py-2 px-8 ${
+            index === entities.length - 1 ? "" : "mb-3"
           }`}
         >
-          <div class="flex items-center">
-            <Avatar />
-            <span class="px-4 text-xl">{user.display_name}</span>
+          <div className="flex items-center">
+            <Avatar alt={entity.displayName} />
+            <span className="px-4 text-xl">{entity.displayName}</span>
           </div>
-          <button
-            onClick={() => {
-              history.pushState(null, "", `/chats/${user.id}`);
-              history.go();
-            }}
-            class="border border-white p-1 rounded focus:outline-none"
-          >
+          <button className="border border-white p-1 rounded focus:outline-none">
             Add <i className="fa-solid fa-user-plus"></i>
           </button>
         </div>
@@ -29,4 +26,3 @@ export const EntityList = () => {
     </div>
   );
 };
-*/

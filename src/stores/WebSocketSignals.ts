@@ -18,7 +18,6 @@ effect(async () => {
     `wss://noti-relay.deno.dev?publicKey=${publicKey}`,
     (isConnected) => {
       connected.value = isConnected;
-      console.log(isConnected);
     },
     console.log
   );

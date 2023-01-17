@@ -7,7 +7,7 @@ import { profileViewEnabled } from "./Chevron";
 
 type ProfileDropdownProps = {};
 
-export default (props: ProfileDropdownProps) => {
+export const Menu = (props: ProfileDropdownProps) => {
   const [_, setLocation] = useLocation();
 
   return (
@@ -18,9 +18,9 @@ export default (props: ProfileDropdownProps) => {
     >
       <div className="flex justify-evenly items-center p-2">
         <div>
-          <Avatar alt={identity.value?.username || ""} />
+          <Avatar alt={identity.value?.displayName || ""} />
         </div>
-        <span>Username: {identity.value?.username}</span>
+        <span>Username: {identity.value?.displayName}</span>
       </div>
       <div className="flex flex-col justify-evenly py-3">
         <Button onClick={() => console.log("edit")}>

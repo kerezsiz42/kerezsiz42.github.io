@@ -1,11 +1,11 @@
 type AvatarProps = {
   size?: number;
-  alt: string;
+  alt?: string;
   src?: string;
 };
 
 export const Avatar = ({ alt, src, size = 64 }: AvatarProps) => {
-  return (
+  return alt ? (
     <img
       width={size}
       height={size}
@@ -14,5 +14,5 @@ export const Avatar = ({ alt, src, size = 64 }: AvatarProps) => {
         src || `https://ui-avatars.com/api/?name=${alt}&rounded=true&format=svg`
       }
     />
-  );
+  ) : null;
 };

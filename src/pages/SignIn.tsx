@@ -1,10 +1,14 @@
 import { Layout } from "../components/Layout";
 import { identity } from "../stores/IdentityStoreSignals";
 import { useSignal } from "@preact/signals";
-import { generateIdentity, importIdentity } from "../functions";
+import {
+  generateKeyPair,
+  importIdentity,
+  publicKeyToBase64,
+} from "../functions";
 
 export const SignIn = () => {
-  const username = useSignal<string>("");
+  const displayName = useSignal<string>("");
   const error = useSignal<string>("");
 
   return (
@@ -24,15 +28,16 @@ export const SignIn = () => {
         <form
           onSubmit={async (e) => {
             e.preventDefault();
-            if (username.value === "") {
+            if (displayName.value === "") {
               error.value = "You must provide a username.";
               return;
             }
-            const { publicKey, privateKey } = await generateIdentity();
+            const { publicKey, privateKey } = await generateKeyPair();
             identity.value = {
               publicKey,
               privateKey,
-              username: username.value,
+              serializedPublicKey: await publicKeyToBase64(publicKey),
+              displayName: displayName.value,
             };
           }}
         >
@@ -44,10 +49,10 @@ export const SignIn = () => {
             className="bg-black border border-white rounded outline-none p-1 my-1 w-full"
             onInput={({ target }) => {
               if (target instanceof HTMLInputElement) {
-                username.value = target.value;
+                displayName.value = target.value;
               }
             }}
-            value={username.value}
+            value={displayName.value}
             autofocus
           />
           <button
