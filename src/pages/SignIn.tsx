@@ -6,10 +6,15 @@ import {
   importIdentity,
   publicKeyToBase64,
 } from "../functions";
+import { Loading } from "./Loading";
 
 export const SignIn = () => {
   const displayName = useSignal<string>("");
   const error = useSignal<string>("");
+
+  if (loading.value) {
+    return <Loading />;
+  }
 
   return (
     <Layout>

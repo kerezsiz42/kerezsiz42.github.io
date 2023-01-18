@@ -5,7 +5,7 @@ import { Avatar } from "../components/Avatar";
 import { Layout } from "../components/Layout";
 import { base64ToPublicKey } from "../functions";
 import { Entity } from "../stores/EntityStoreSignals";
-import { loading } from "../stores/IdentityStoreSignals";
+import { messages } from "../stores/IdentityStoreSignals";
 
 type Optional<T extends Record<string, unknown>, U extends keyof T> = Omit<
   T,
@@ -21,18 +21,16 @@ export const Chat = ({
     undefined
   );
   const [_, setLocation] = useLocation();
+  const message = useSignal("");
 
   useEffect(() => {
     const fn = async () => {
-      loading.value = true;
       if (serializedPublicKey === "" || displayName === "") {
         setLocation("/");
-        loading.value = false;
         return;
       }
       const publicKey = await base64ToPublicKey(serializedPublicKey);
       entity.value = { publicKey, serializedPublicKey, displayName };
-      loading.value = false;
     };
     fn();
   }, []);
@@ -48,14 +46,36 @@ export const Chat = ({
           <i className="fa-solid fa-bars text-3xl p-3 cursor-pointer"></i>
         </Link>
       </div>
-      <div className="flex-1"></div>
+      <div className="flex-1 flex flex-col">
+        {messages.value.map((message) => (
+          <span className="bg-blue-500 rounded-2xl p-2 m-2">{message}</span>
+        ))}
+      </div>
       <div className="border-gray-500 flex items-center border-t py-4 px-2 w-full">
-        <input
-          className="bg-black border border-white focus:outline-none w-full px-3 py-2 rounded-[2rem]"
-          type="text"
+        <textarea
+          className="bg-black border border-white focus:outline-none w-full px-3 py-2 rounded-[2rem] resize-none overflow-hidden"
           placeholder="Type your message..."
-        ></input>
-        <i className="fa-solid fa-paper-plane py-2 text-2xl pr-3 pl-6 cursor-pointer"></i>
+          autofocus
+          rows={2}
+          onChange={({ target }) => {
+            if (target instanceof HTMLTextAreaElement) {
+              message.value = target.value;
+            }
+          }}
+        ></textarea>
+        <button
+          type="button"
+          onClick={async () => {
+            const id = encodeURIComponent(serializedPublicKey);
+            const res = await fetch(`https://noti-relay.deno.dev?id=${id}`, {
+              method: "POST",
+              body: JSON.stringify({ message: message.value }),
+            });
+            console.log(res.status);
+          }}
+        >
+          <i className="fa-solid fa-paper-plane py-2 text-2xl pr-3 pl-6 cursor-pointer"></i>
+        </button>
       </div>
     </Layout>
   );

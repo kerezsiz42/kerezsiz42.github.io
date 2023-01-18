@@ -11,7 +11,8 @@ export const Avatar = ({ alt, src, size = 64 }: AvatarProps) => {
       height={size}
       alt={alt}
       src={
-        src || `https://ui-avatars.com/api/?name=${alt}&rounded=true&format=svg`
+        src ||
+        `https://ui-avatars.com/api/?name=${alt}&rounded=true&format=svg&background=random`
       }
     />
   ) : null;

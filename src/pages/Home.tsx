@@ -1,6 +1,6 @@
 import { Layout } from "../components/Layout";
 import { Link } from "wouter-preact";
-import { connected } from "../stores/WebSocketSignals";
+import { connected } from "../stores/IdentityStoreSignals";
 import { Chevron } from "../components/Chevron";
 import { Menu } from "../components/Menu";
 import { EntityList } from "../components/EntityList";

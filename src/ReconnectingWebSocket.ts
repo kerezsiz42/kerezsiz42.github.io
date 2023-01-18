@@ -21,7 +21,7 @@ export class ReconnectingWebSocket {
   public connect(
     url: string | URL,
     onStateChange: (isConnected: boolean) => void,
-    onMessage: (message: any) => void
+    onMessage: (message: string) => void
   ): void {
     this.shouldBeOpen = true;
     this.ws = this._connect(url);

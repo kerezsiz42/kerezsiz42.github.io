@@ -10,7 +10,9 @@ export type Identity = {
 };
 
 export const identity = signal<Identity | undefined>(undefined);
-export const loading = signal<boolean>(false);
+export const loading = signal<boolean>(true);
+export const connected = signal(false);
+export const messages = signal<string[]>([]);
 
 effect(async () => {
   if (!identity.value) {
