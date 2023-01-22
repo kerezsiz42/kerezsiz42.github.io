@@ -2,21 +2,25 @@ import { useSignal } from "@preact/signals";
 import { useEffect } from "preact/hooks";
 import { Layout } from "../components/Layout";
 import { QRCode } from "../components/QRCode";
-import { identity } from "../stores/IdentityStoreSignals";
+import { identity } from "../signals";
 
-export const Create = () => {
+export const CreatePage = () => {
   const text = useSignal("");
 
   useEffect(() => {
-    if (!identity.value) {
-      return;
-    }
-    const { serializedPublicKey, displayName } = identity.value;
-    text.value = `${location.protocol}//${
-      location.host
-    }/chat/${encodeURIComponent(displayName)}/${encodeURIComponent(
-      serializedPublicKey
-    )}`;
+    const fn = async () => {
+      if (!identity.value) {
+        return;
+      }
+      text.value = `${location.protocol}//${
+        location.host
+      }/chat/${encodeURIComponent(
+        JSON.stringify(
+          await crypto.subtle.exportKey("jwk", identity.value.publicKey)
+        )
+      )}`;
+    };
+    fn();
   }, [identity.value]);
 
   return (

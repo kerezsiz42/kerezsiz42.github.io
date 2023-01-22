@@ -1,6 +1,5 @@
 import { useLocation } from "wouter-preact";
-import { IDENTITY_STORAGE_NAME } from "../functions";
-import { identity } from "../stores/IdentityStoreSignals";
+import { identity, IDENTITY_STORAGE_NAME } from "../signals";
 import { Avatar } from "./Avatar";
 import { Button } from "./Button";
 import { profileViewEnabled } from "./Chevron";

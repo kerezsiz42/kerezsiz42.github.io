@@ -1,19 +1,18 @@
 import { Layout } from "../components/Layout";
-import { identity, loading } from "../stores/IdentityStoreSignals";
+import { identity, importIdentityFromFile, loading } from "../signals";
 import { useSignal } from "@preact/signals";
-import {
-  generateKeyPair,
-  importIdentity,
-  publicKeyToBase64,
-} from "../functions";
-import { Loading } from "./Loading";
+import { Loading } from "../components/Loading";
 
-export const SignIn = () => {
+export const SignInPage = () => {
   const displayName = useSignal<string>("");
   const error = useSignal<string>("");
 
   if (loading.value) {
-    return <Loading />;
+    return (
+      <Layout>
+        <Loading />
+      </Layout>
+    );
   }
 
   return (
@@ -39,11 +38,19 @@ export const SignIn = () => {
               loading.value = false;
               return;
             }
-            const { publicKey, privateKey } = await generateKeyPair();
+            const { publicKey, privateKey } = await crypto.subtle.generateKey(
+              {
+                name: "RSA-OAEP",
+                modulusLength: 4096,
+                publicExponent: new Uint8Array([1, 0, 1]),
+                hash: "SHA-256",
+              },
+              true,
+              ["encrypt", "decrypt"]
+            );
             identity.value = {
               publicKey,
               privateKey,
-              serializedPublicKey: await publicKeyToBase64(publicKey),
               displayName: displayName.value,
             };
             loading.value = false;
@@ -80,7 +87,7 @@ export const SignIn = () => {
             onChange={async ({ currentTarget }) => {
               loading.value = true;
               if (currentTarget.files) {
-                const id = await importIdentity(currentTarget.files);
+                const id = await importIdentityFromFile(currentTarget.files);
                 if (!id) {
                   error.value =
                     "Failed to import identity. Choose an exported json file that contains your identity.";

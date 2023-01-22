@@ -1,46 +1,45 @@
 import { useSignal } from "@preact/signals";
 import { useEffect } from "preact/hooks";
-import { Link, useLocation } from "wouter-preact";
+import { Link } from "wouter-preact";
 import { Avatar } from "../components/Avatar";
 import { Layout } from "../components/Layout";
-import { base64ToPublicKey } from "../functions";
-import { Entity } from "../stores/EntityStoreSignals";
-import { messages } from "../stores/IdentityStoreSignals";
+import { createChat } from "../handler";
+import { getMessagesBySender } from "../idb";
+import { messages, selectedChat } from "../signals";
 
-type Optional<T extends Record<string, unknown>, U extends keyof T> = Omit<
-  T,
-  U
-> &
-  Partial<Pick<T, U>>;
-
-export const Chat = ({
+export const ChatPage = ({
   serializedPublicKey,
-  displayName,
-}: Omit<Entity, "symmetricKey" | "publicKey">) => {
-  const entity = useSignal<Optional<Entity, "symmetricKey"> | undefined>(
-    undefined
-  );
-  const [_, setLocation] = useLocation();
+}: {
+  serializedPublicKey: string;
+}) => {
   const message = useSignal("");
 
   useEffect(() => {
     const fn = async () => {
-      if (serializedPublicKey === "" || displayName === "") {
-        setLocation("/");
-        return;
-      }
-      const publicKey = await base64ToPublicKey(serializedPublicKey);
-      entity.value = { publicKey, serializedPublicKey, displayName };
+      // Look into database to see if chat exists
+      createChat(serializedPublicKey);
     };
     fn();
   }, []);
+
+  useEffect(() => {
+    const fn = async () => {
+      messages.value = await getMessagesBySender(serializedPublicKey);
+    };
+    fn();
+  }, [selectedChat.value]);
 
   return (
     <Layout>
       <div className="flex items-center justify-between p-3 border-b border-gray-500 w-full">
         <div className="flex items-center">
-          <Avatar alt={entity.value?.displayName} src={entity.value?.avatar} />
-          <h1 className="pl-4 font-bold">{entity.value?.displayName}</h1>
+          <Avatar
+            alt={selectedChat.value?.displayName || "User"}
+            src={selectedChat.value?.avatar}
+          />
+          <h1 className="pl-4 font-bold">
+            {selectedChat.value?.displayName || "Loading..."}
+          </h1>
         </div>
         <Link href="/">
           <i className="fa-solid fa-bars text-3xl p-3 cursor-pointer"></i>
@@ -56,24 +55,14 @@ export const Chat = ({
           className="bg-black border border-white focus:outline-none w-full px-3 py-2 rounded-[2rem] resize-none overflow-hidden"
           placeholder="Type your message..."
           autofocus
-          rows={2}
+          rows={1}
           onChange={({ target }) => {
             if (target instanceof HTMLTextAreaElement) {
               message.value = target.value;
             }
           }}
         ></textarea>
-        <button
-          type="button"
-          onClick={async () => {
-            const id = encodeURIComponent(serializedPublicKey);
-            const res = await fetch(`https://noti-relay.deno.dev?id=${id}`, {
-              method: "POST",
-              body: JSON.stringify({ message: message.value }),
-            });
-            console.log(res.status);
-          }}
-        >
+        <button type="button" onClick={() => {}}>
           <i className="fa-solid fa-paper-plane py-2 text-2xl pr-3 pl-6 cursor-pointer"></i>
         </button>
       </div>

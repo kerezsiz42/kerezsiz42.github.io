@@ -1,34 +1,47 @@
+import { signal, effect } from "@preact/signals";
 import { z } from "zod";
-import { Identity } from "./stores/IdentityStoreSignals";
 
-const ALGORITHM = {
+export const ASYMMETRIC_ALOGRITHM = {
   name: "RSA-OAEP",
   hash: { name: "SHA-256" },
 };
 
+export const SYMMETRIC_ALGORITHM = {
+  name: "AES-GCM",
+  length: 256,
+};
+
+export type Chat = {
+  symmetricKey: CryptoKey;
+  publicKey: CryptoKey;
+  serializedPublicKey: string;
+  displayName: string;
+  avatar?: string;
+};
+
+export const messageSchema = z.object({
+  content: z.string(),
+  sender: z.string(),
+  recipient: z.string(),
+  timestamp: z.number(),
+});
+
+export type Identity = {
+  privateKey: CryptoKey;
+  publicKey: CryptoKey;
+  displayName: string;
+  avatar?: string;
+};
+
+export const identity = signal<Identity | undefined>(undefined);
+export const loading = signal<boolean>(true);
+export const connected = signal(false);
+export const selectedChat = signal<Chat | undefined>(undefined);
+export const messages = signal<z.infer<typeof messageSchema>[]>([]);
+
 export const IDENTITY_STORAGE_NAME = "identity";
 
-export const publicKeyToBase64 = async (
-  publicKey: CryptoKey
-): Promise<string> => {
-  const arrayBuffer = await crypto.subtle.exportKey("spki", publicKey);
-  return window.btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-};
-
-export const base64ToPublicKey = async (
-  publicKey: string
-): Promise<CryptoKey> => {
-  const bytes = window.atob(publicKey);
-  const byteArray = new Uint8Array(bytes.length);
-  for (let i = 0; i < bytes.length; i++) {
-    byteArray[i] = bytes.charCodeAt(i);
-  }
-  return await crypto.subtle.importKey("spki", byteArray, ALGORITHM, true, [
-    "encrypt",
-  ]);
-};
-
-export const importIdentity = (
+export const importIdentityFromFile = (
   fileList: FileList
 ): Promise<Identity | undefined> => {
   return new Promise((resolve) => {
@@ -75,14 +88,14 @@ export const deserializeIdentity = async (
   const publicKey = await crypto.subtle.importKey(
     "jwk",
     parsing.data.publicKey,
-    ALGORITHM,
+    ASYMMETRIC_ALOGRITHM,
     true,
     ["encrypt"]
   );
   const privateKey = await crypto.subtle.importKey(
     "jwk",
     parsing.data.privateKey,
-    ALGORITHM,
+    ASYMMETRIC_ALOGRITHM,
     true,
     ["decrypt"]
   );
@@ -90,22 +103,16 @@ export const deserializeIdentity = async (
     publicKey,
     privateKey,
     displayName: parsing.data.displayName,
-    serializedPublicKey: await publicKeyToBase64(publicKey),
   };
-};
-
-export const generateKeyPair = async () => {
-  return await crypto.subtle.generateKey(
-    {
-      name: "RSA-OAEP",
-      modulusLength: 4096,
-      publicExponent: new Uint8Array([1, 0, 1]),
-      hash: "SHA-256",
-    },
-    true,
-    ["encrypt", "decrypt"]
-  );
 };
 
 export const loadIdentity = () =>
   deserializeIdentity(localStorage.getItem(IDENTITY_STORAGE_NAME) || '""');
+
+effect(async () => {
+  if (!identity.value) {
+    return;
+  }
+  const serializedIdentity = await serializeIdentity(identity.value);
+  localStorage.setItem(IDENTITY_STORAGE_NAME, serializedIdentity);
+});

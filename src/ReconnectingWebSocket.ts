@@ -8,7 +8,7 @@ export class ReconnectingWebSocket {
   private previousIsConnected: boolean;
   private retryDelay: number;
   private onStateChange?: (isConnected: boolean) => void;
-  private onMessage?: (message: string) => void;
+  private onMessage?: (message: any) => void;
   private shouldBeOpen: boolean;
 
   constructor() {
@@ -21,7 +21,7 @@ export class ReconnectingWebSocket {
   public connect(
     url: string | URL,
     onStateChange: (isConnected: boolean) => void,
-    onMessage: (message: string) => void
+    onMessage: (message: any) => void
   ): void {
     this.shouldBeOpen = true;
     this.ws = this._connect(url);
