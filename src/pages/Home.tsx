@@ -19,7 +19,7 @@ export const HomePage = () => {
       </div>
       <Menu />
       <div className="w-full text-center">
-        <span>Status: {connected.value ? "Connected" : "Not connected"}</span>
+        <span>Status: {connected.value ? "Connected" : "Disconnected"}</span>
       </div>
       <div className="flex-1"></div>
       <Link href="/create">

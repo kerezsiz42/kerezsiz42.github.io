@@ -1,6 +1,6 @@
 import { useSignal } from "@preact/signals";
 import { useEffect } from "preact/hooks";
-import { Link } from "wouter-preact";
+import { Link, useLocation } from "wouter-preact";
 import { Avatar } from "../components/Avatar";
 import { Layout } from "../components/Layout";
 import { createChat } from "../handler";
@@ -13,11 +13,16 @@ export const ChatPage = ({
   serializedPublicKey: string;
 }) => {
   const message = useSignal("");
+  const [_, setLocation] = useLocation();
 
   useEffect(() => {
     const fn = async () => {
       // Look into database to see if chat exists
-      createChat(serializedPublicKey);
+      try {
+        await createChat(serializedPublicKey);
+      } catch {
+        setLocation("/");
+      }
     };
     fn();
   }, []);

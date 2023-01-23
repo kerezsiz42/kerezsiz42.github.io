@@ -11,17 +11,21 @@ export class ReconnectingWebSocket {
   private onMessage?: (message: any) => void;
   private shouldBeOpen: boolean;
 
-  constructor() {
+  constructor(signal: AbortSignal) {
     this.isConnected = false;
     this.previousIsConnected = false;
     this.retryDelay = STARTING_RETRY_DELAY_MS;
     this.shouldBeOpen = false;
+    signal.addEventListener("abort", () => {
+      this.shouldBeOpen = false;
+      this.ws?.close();
+    });
   }
 
   public connect(
     url: string | URL,
     onStateChange: (isConnected: boolean) => void,
-    onMessage: (message: any) => void
+    onMessage: (message: any) => void | Promise<void>
   ): void {
     this.shouldBeOpen = true;
     this.ws = this._connect(url);
@@ -66,10 +70,5 @@ export class ReconnectingWebSocket {
 
   public send(data: any) {
     this.ws?.send(JSON.stringify(data));
-  }
-
-  public close() {
-    this.shouldBeOpen = false;
-    this.ws?.close();
   }
 }

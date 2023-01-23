@@ -31,10 +31,11 @@ export const App = () => {
   }, []);
 
   useEffect(() => {
+    const ac = new AbortController();
     const fn = async () => {
-      const socket = new ReconnectingWebSocket();
+      const socket = new ReconnectingWebSocket(ac.signal);
       if (!identity.value) {
-        socket.close();
+        ac.abort();
         return;
       }
       const id = encodeURIComponent(
@@ -47,9 +48,9 @@ export const App = () => {
         (isConnected) => (connected.value = isConnected),
         reducer
       );
-      return () => socket.close();
     };
     fn();
+    return () => ac.abort();
   }, [identity.value]);
 
   if (loading.value) {
@@ -67,14 +68,9 @@ export const App = () => {
   return (
     <Switch>
       <Route path="/chat/:pk">
-        {({ pk }) => {
-          const [_, setLocation] = useLocation();
-          const serializedPublicKey = decodeURIComponent(pk || "");
-          if (serializedPublicKey === "") {
-            setLocation("/");
-          }
-          return <ChatPage serializedPublicKey={serializedPublicKey} />;
-        }}
+        {({ pk }) => (
+          <ChatPage serializedPublicKey={decodeURIComponent(pk || "")} />
+        )}
       </Route>
       <Route path="/create" component={CreatePage} />
       <Route path="/" component={HomePage} />
