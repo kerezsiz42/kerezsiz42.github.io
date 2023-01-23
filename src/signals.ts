@@ -1,15 +1,11 @@
 import { signal, effect } from "@preact/signals";
 import { z } from "zod";
-
-export const ASYMMETRIC_ALOGRITHM = {
-  name: "RSA-OAEP",
-  hash: { name: "SHA-256" },
-};
-
-export const SYMMETRIC_ALGORITHM = {
-  name: "AES-GCM",
-  length: 256,
-};
+import {
+  exportPrivateKey,
+  exportPublicKey,
+  importPrivateKey,
+  importPublicKey,
+} from "./encryption";
 
 export type Chat = {
   symmetricKey: CryptoKey;
@@ -22,7 +18,6 @@ export type Chat = {
 export const messageSchema = z.object({
   content: z.string(),
   sender: z.string(),
-  recipient: z.string(),
   timestamp: z.number(),
 });
 
@@ -41,7 +36,7 @@ export const messages = signal<z.infer<typeof messageSchema>[]>([]);
 
 export const IDENTITY_STORAGE_NAME = "identity";
 
-export const importIdentityFromFile = (
+export const loadIdentityFromFile = (
   fileList: FileList
 ): Promise<Identity | undefined> => {
   return new Promise((resolve) => {
@@ -50,7 +45,7 @@ export const importIdentityFromFile = (
     }
     const fileReader = new FileReader();
     fileReader.onloadend = async () => {
-      const data = await deserializeIdentity(fileReader.result as string);
+      const data = await importIdentity(fileReader.result as string);
       if (!data) {
         return resolve(undefined);
       }
@@ -60,59 +55,50 @@ export const importIdentityFromFile = (
   });
 };
 
-export const serializeIdentity = async ({
+export const exportIdentity = async ({
   publicKey,
   privateKey,
   displayName,
+  avatar,
 }: Identity): Promise<string> => {
   return JSON.stringify({
-    publicKey: await crypto.subtle.exportKey("jwk", publicKey),
-    privateKey: await crypto.subtle.exportKey("jwk", privateKey),
+    publicKey: await exportPublicKey(publicKey),
+    privateKey: await exportPrivateKey(privateKey),
     displayName,
+    avatar,
   });
 };
 
-export const deserializeIdentity = async (
+export const importIdentity = async (
   identityString: string
 ): Promise<Identity | undefined> => {
   const parsing = z
     .object({
-      publicKey: z.any(),
-      privateKey: z.any(),
+      publicKey: z.string(),
+      privateKey: z.string(),
       displayName: z.string(),
+      avatar: z.string().optional(),
     })
     .safeParse(JSON.parse(identityString));
   if (!parsing.success) {
     return undefined;
   }
-  const publicKey = await crypto.subtle.importKey(
-    "jwk",
-    parsing.data.publicKey,
-    ASYMMETRIC_ALOGRITHM,
-    true,
-    ["encrypt"]
-  );
-  const privateKey = await crypto.subtle.importKey(
-    "jwk",
-    parsing.data.privateKey,
-    ASYMMETRIC_ALOGRITHM,
-    true,
-    ["decrypt"]
-  );
   return {
-    publicKey,
-    privateKey,
+    publicKey: await importPublicKey(parsing.data.publicKey),
+    privateKey: await importPrivateKey(parsing.data.privateKey),
     displayName: parsing.data.displayName,
   };
 };
 
-export const loadIdentity = () =>
-  deserializeIdentity(localStorage.getItem(IDENTITY_STORAGE_NAME) || '""');
+export const getIdentity = () =>
+  importIdentity(localStorage.getItem(IDENTITY_STORAGE_NAME) || '""');
 
 effect(async () => {
   if (!identity.value) {
     return;
   }
-  const serializedIdentity = await serializeIdentity(identity.value);
-  localStorage.setItem(IDENTITY_STORAGE_NAME, serializedIdentity);
+  localStorage.setItem(
+    IDENTITY_STORAGE_NAME,
+    await exportIdentity(identity.value)
+  );
 });

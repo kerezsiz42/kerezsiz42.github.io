@@ -11,12 +11,12 @@ export class ReconnectingWebSocket {
   private onMessage?: (message: any) => void;
   private shouldBeOpen: boolean;
 
-  constructor(signal: AbortSignal) {
+  constructor(signal?: AbortSignal) {
     this.isConnected = false;
     this.previousIsConnected = false;
     this.retryDelay = STARTING_RETRY_DELAY_MS;
     this.shouldBeOpen = false;
-    signal.addEventListener("abort", () => {
+    signal?.addEventListener("abort", () => {
       this.shouldBeOpen = false;
       this.ws?.close();
     });

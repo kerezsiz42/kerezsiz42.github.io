@@ -1,5 +1,16 @@
 import { z } from "zod";
-import { ASYMMETRIC_ALOGRITHM, identity, SYMMETRIC_ALGORITHM } from "./signals";
+import { addChat } from "./idb";
+import { Chat, identity } from "./signals";
+import {
+  decryptRSA,
+  encryptAES,
+  encryptRSA,
+  exportPublicKey,
+  exportSymmetricKey,
+  importPublicKey,
+  importSymmetricKey,
+  SYMMETRIC_ALGORITHM,
+} from "./encryption";
 
 const createMessageSchema = z.object({
   type: z.literal("CREATE_MESSAGE"),
@@ -9,7 +20,8 @@ const createMessageSchema = z.object({
 const createChatSchema = z.object({
   type: z.literal("CREATE_CHAT"),
   displayName: z.string(),
-  symmetricKey: z.any(),
+  symmetricKey: z.string(),
+  avatar: z.string().optional(),
 });
 
 const acceptChatSchema = z.object({
@@ -18,29 +30,22 @@ const acceptChatSchema = z.object({
 
 const dataSchema = z.object({
   iv: z.string().optional(),
-  publicKey: z.any(),
+  publicKey: z.string(),
   ciphertext: z.string(),
 });
 
 const send = async (
-  serializedPublicKey: string,
+  destinationPublicKey: string,
   data: z.infer<typeof dataSchema>
 ) => {
-  const id = encodeURIComponent(serializedPublicKey);
   const body = JSON.stringify(data);
-  const url = `https://noti-relay.deno.dev?id=${id}`;
+  const url = `https://noti-relay.deno.dev?id=${destinationPublicKey}`;
   const res = await fetch(url, { method: "POST", body });
   console.log(res.status);
 };
 
 export const createChat = async (serializedPublicKey: string) => {
-  const publicKey = await crypto.subtle.importKey(
-    "jwk",
-    JSON.parse(serializedPublicKey),
-    ASYMMETRIC_ALOGRITHM,
-    true,
-    ["encrypt"]
-  );
+  const publicKey = await importPublicKey(serializedPublicKey);
   const symmetricKey = await crypto.subtle.generateKey(
     SYMMETRIC_ALGORITHM,
     true,
@@ -49,55 +54,50 @@ export const createChat = async (serializedPublicKey: string) => {
   if (!identity.value) {
     return;
   }
-  const payload: z.infer<typeof createChatSchema> = {
+  const data: z.infer<typeof createChatSchema> = {
     type: "CREATE_CHAT",
     displayName: identity.value.displayName,
-    symmetricKey: await crypto.subtle.exportKey("jwk", symmetricKey),
+    symmetricKey: await exportSymmetricKey(symmetricKey),
   };
-  const arrayBuffer = await crypto.subtle.encrypt(
-    {
-      name: "RSA-OAEP",
-    },
-    publicKey,
-    new TextEncoder().encode(JSON.stringify(payload))
-  );
+  const ciphertext = await encryptRSA(publicKey, data);
   send(serializedPublicKey, {
-    publicKey: await crypto.subtle.exportKey("jwk", identity.value.publicKey),
-    ciphertext: window.btoa(
-      String.fromCharCode(...new Uint8Array(arrayBuffer))
-    ),
+    publicKey: await exportPublicKey(identity.value.publicKey),
+    ciphertext,
   });
+  console.log("hello");
 };
 
 const onCreateChat = async (
-  destinationPublicKey: JsonWebKey,
+  destinationPublicKey: string,
   receivedPayload: z.infer<typeof createChatSchema>
 ) => {
-  const symmetricKey = await crypto.subtle.importKey(
-    "jwk",
-    receivedPayload.symmetricKey,
-    SYMMETRIC_ALGORITHM,
-    true,
-    ["encrypt", "decrypt"]
-  );
-  const payload: z.infer<typeof acceptChatSchema> = { type: "ACCEPT_CHAT" };
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const arrayBuffer = await crypto.subtle.encrypt(
-    { name: "AES-GCM", iv },
+  const symmetricKey = await importSymmetricKey(receivedPayload.symmetricKey);
+  const chat: Chat = {
     symmetricKey,
-    new TextEncoder().encode(JSON.stringify(payload))
-  );
+    publicKey: await importPublicKey(destinationPublicKey),
+    serializedPublicKey: destinationPublicKey,
+    displayName: receivedPayload.displayName,
+    avatar: receivedPayload.avatar,
+  };
+  console.log(chat);
+  // await addChat(chat);
+  const payload: z.infer<typeof acceptChatSchema> = { type: "ACCEPT_CHAT" };
+  const { iv, ciphertext } = await encryptAES(symmetricKey, payload);
   if (!identity.value) {
     return;
   }
-  send(JSON.stringify(destinationPublicKey), {
-    iv: window.btoa(String.fromCharCode(...iv)),
-    publicKey: await crypto.subtle.exportKey("jwk", identity.value.publicKey),
-    ciphertext: window.btoa(
-      String.fromCharCode(...new Uint8Array(arrayBuffer))
-    ),
+  send(destinationPublicKey, {
+    iv,
+    publicKey: await exportPublicKey(identity.value.publicKey),
+    ciphertext,
   });
 };
+
+const onAcceptChat = () => {};
+
+const onCreateMessage = () => {};
+
+const onAcceptMessage = () => {};
 
 export const reducer = async (data: any) => {
   const result = dataSchema.safeParse(data);
@@ -106,23 +106,16 @@ export const reducer = async (data: any) => {
   }
   let payload;
   if (result.data.iv) {
+    console.log(result.data);
   } else {
     if (!identity.value) {
       return;
     }
-    const bytes = window.atob(result.data.ciphertext);
-    const ciphertext = new Uint8Array(bytes.length);
-    for (let i = 0; i < bytes.length; i++) {
-      ciphertext[i] = bytes.charCodeAt(i);
-    }
-    const arrayBuffer = await crypto.subtle.decrypt(
-      {
-        name: "RSA-OAEP",
-      },
+    payload = await decryptRSA(
       identity.value.privateKey,
-      ciphertext
+      result.data.ciphertext
     );
-    payload = JSON.parse(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+    console.log(payload);
   }
   const payloadResult = z
     .discriminatedUnion("type", [
@@ -137,12 +130,12 @@ export const reducer = async (data: any) => {
   }
   switch (payloadResult.data.type) {
     case "CREATE_MESSAGE":
-      return;
+      return onCreateMessage();
     case "ACCEPT_MESSAGE":
-      return;
+      return onAcceptMessage();
     case "CREATE_CHAT":
       return onCreateChat(result.data.publicKey, payloadResult.data);
     case "ACCEPT_CHAT":
-      return;
+      return onAcceptChat();
   }
 };

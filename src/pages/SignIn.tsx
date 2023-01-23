@@ -1,5 +1,5 @@
 import { Layout } from "../components/Layout";
-import { identity, importIdentityFromFile, loading } from "../signals";
+import { identity, loadIdentityFromFile, loading } from "../signals";
 import { useSignal } from "@preact/signals";
 import { Loading } from "../components/Loading";
 
@@ -87,7 +87,7 @@ export const SignInPage = () => {
             onChange={async ({ currentTarget }) => {
               loading.value = true;
               if (currentTarget.files) {
-                const id = await importIdentityFromFile(currentTarget.files);
+                const id = await loadIdentityFromFile(currentTarget.files);
                 if (!id) {
                   error.value =
                     "Failed to import identity. Choose an exported json file that contains your identity.";

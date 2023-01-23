@@ -2,6 +2,7 @@ import { useSignal } from "@preact/signals";
 import { useEffect } from "preact/hooks";
 import { Layout } from "../components/Layout";
 import { QRCode } from "../components/QRCode";
+import { exportPublicKey } from "../encryption";
 import { identity } from "../signals";
 
 export const CreatePage = () => {
@@ -14,11 +15,7 @@ export const CreatePage = () => {
       }
       text.value = `${location.protocol}//${
         location.host
-      }/chat/${encodeURIComponent(
-        JSON.stringify(
-          await crypto.subtle.exportKey("jwk", identity.value.publicKey)
-        )
-      )}`;
+      }/chat/${await exportPublicKey(identity.value.publicKey)}`;
     };
     fn();
   }, [identity.value]);

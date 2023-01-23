@@ -1,5 +1,5 @@
 import { useEffect } from "preact/hooks";
-import { Redirect, Route, Switch, useLocation } from "wouter-preact";
+import { Redirect, Route, Switch } from "wouter-preact";
 import { reducer } from "./handler";
 import { initDatabase } from "./idb";
 import { ChatPage } from "./pages/Chat";
@@ -8,8 +8,9 @@ import { HomePage } from "./pages/Home";
 import { Loading } from "./components/Loading";
 import { SignInPage } from "./pages/SignIn";
 import { ReconnectingWebSocket } from "./ReconnectingWebSocket";
-import { connected, identity, loadIdentity, loading } from "./signals";
+import { connected, getIdentity, identity, loading } from "./signals";
 import { Layout } from "./components/Layout";
+import { exportPublicKey } from "./encryption";
 
 export const App = () => {
   useEffect(() => {
@@ -19,7 +20,7 @@ export const App = () => {
   useEffect(() => {
     const fn = async () => {
       loading.value = true;
-      const id = await loadIdentity();
+      const id = await getIdentity();
       if (!id) {
         loading.value = false;
         return;
@@ -38,13 +39,10 @@ export const App = () => {
         ac.abort();
         return;
       }
-      const id = encodeURIComponent(
-        JSON.stringify(
-          await crypto.subtle.exportKey("jwk", identity.value.publicKey)
-        )
-      );
       socket.connect(
-        `wss://noti-relay.deno.dev?id=${id}`,
+        `wss://noti-relay.deno.dev?id=${await exportPublicKey(
+          identity.value.publicKey
+        )}`,
         (isConnected) => (connected.value = isConnected),
         reducer
       );
@@ -67,10 +65,8 @@ export const App = () => {
 
   return (
     <Switch>
-      <Route path="/chat/:pk">
-        {({ pk }) => (
-          <ChatPage serializedPublicKey={decodeURIComponent(pk || "")} />
-        )}
+      <Route path="/chat/:publicKey">
+        {({ publicKey }) => <ChatPage publicKey={publicKey} />}
       </Route>
       <Route path="/create" component={CreatePage} />
       <Route path="/" component={HomePage} />

@@ -7,11 +7,11 @@ import { createChat } from "../handler";
 import { getMessagesBySender } from "../idb";
 import { messages, selectedChat } from "../signals";
 
-export const ChatPage = ({
-  serializedPublicKey,
-}: {
-  serializedPublicKey: string;
-}) => {
+type ChatPageProps = {
+  publicKey?: string;
+};
+
+export const ChatPage = ({ publicKey = "" }: ChatPageProps) => {
   const message = useSignal("");
   const [_, setLocation] = useLocation();
 
@@ -19,7 +19,7 @@ export const ChatPage = ({
     const fn = async () => {
       // Look into database to see if chat exists
       try {
-        await createChat(serializedPublicKey);
+        await createChat(publicKey);
       } catch {
         setLocation("/");
       }
@@ -29,7 +29,7 @@ export const ChatPage = ({
 
   useEffect(() => {
     const fn = async () => {
-      messages.value = await getMessagesBySender(serializedPublicKey);
+      messages.value = await getMessagesBySender(publicKey);
     };
     fn();
   }, [selectedChat.value]);

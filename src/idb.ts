@@ -31,23 +31,23 @@ export const initDatabase = async () => {
   });
 };
 
-export const addChat = async (entity: Chat) => {
+export const addChat = async (chat: Chat) => {
   if (!idb) {
-    return undefined;
+    throw new Error("Idb is undefined");
   }
-  return await idb.add("chats", entity, entity.serializedPublicKey);
+  return await idb.add("chats", chat, chat.serializedPublicKey);
 };
 
 export const getChats = async () => {
   if (!idb) {
-    return [];
+    throw new Error("Idb is undefined");
   }
   return await idb.getAll("chats");
 };
 
 export const getMessagesBySender = async (sender: string) => {
   if (!idb) {
-    return [];
+    throw new Error("Idb is undefined");
   }
   return await idb.getAll("messages", sender);
 };
