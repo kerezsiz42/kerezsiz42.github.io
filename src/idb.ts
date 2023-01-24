@@ -1,4 +1,4 @@
-import { openDB, DBSchema, IDBPDatabase } from "idb";
+import { openDB, DBSchema, IDBPDatabase, deleteDB } from "idb";
 import { Chat, Key, Message } from "./signals";
 
 interface NotiDB extends DBSchema {
@@ -33,6 +33,14 @@ export const initDatabase = () => {
       db.createObjectStore("keys", { keyPath: "serializedPublicKey" });
     },
   });
+};
+
+export const clearDatabase = async () => {
+  if (idb) {
+    idb.close();
+    idb = undefined;
+  }
+  await deleteDB("noti-db");
 };
 
 export class Keys {

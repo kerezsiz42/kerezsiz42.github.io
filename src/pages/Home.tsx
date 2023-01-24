@@ -1,30 +1,45 @@
 import { Layout } from "../components/Layout";
 import { Link } from "wouter-preact";
-import { connected, Chat } from "../signals";
+import { chats, connected, identity, IDENTITY_STORAGE_NAME } from "../signals";
 import { Chevron } from "../components/Chevron";
 import { Menu } from "../components/Menu";
-import { useEffect } from "preact/hooks";
 import { useSignal } from "@preact/signals";
 import { ChatList } from "../components/ChatList";
-import { Chats } from "../idb";
+import { Chats, clearDatabase } from "../idb";
 
 export const HomePage = () => {
-  const chats = useSignal<Chat[]>([]);
-
-  useEffect(() => {
-    const fn = async () => {
-      chats.value = await Chats.list();
-    };
-    fn();
-  }, []);
+  const enabled = useSignal<boolean>(false);
 
   return (
     <Layout>
       <div class="flex items-center justify-between px-5 py-3 w-full">
         <h1 class="font-bold text-2xl w-full">Conversations</h1>
-        <Chevron />
+        <Chevron
+          toggle={() => (enabled.value = !enabled.value)}
+          enabled={enabled.value}
+        />
       </div>
-      <Menu />
+      <Menu
+        enabled={enabled.value}
+        onEdit={() => console.log("edit")}
+        onSignOut={async () => {
+          localStorage.removeItem(IDENTITY_STORAGE_NAME);
+          identity.value = undefined;
+          await clearDatabase();
+          chats.value = await Chats.list();
+        }}
+        onSave={() => {
+          const a = document.createElement("a");
+          a.setAttribute(
+            "href",
+            `data:text/plain;charset=utf-8,${encodeURIComponent(
+              localStorage.getItem(IDENTITY_STORAGE_NAME) || ""
+            )}`
+          );
+          a.setAttribute("download", `${crypto.randomUUID()}.json`);
+          a.click();
+        }}
+      />
       <div className="w-full text-center">
         <span>Status: {connected.value ? "Connected" : "Disconnected"}</span>
       </div>

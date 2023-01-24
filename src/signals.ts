@@ -35,6 +35,7 @@ export const identity = signal<Identity | undefined>(undefined);
 export const loading = signal<boolean>(true);
 export const connected = signal(false);
 export const currentChat = signal<Chat | undefined>(undefined);
+export const chats = signal<Chat[]>([]);
 
 export const IDENTITY_STORAGE_NAME = "identity";
 

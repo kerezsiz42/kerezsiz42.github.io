@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Chat, currentChat, identity } from "./signals";
+import { Chat, chats, currentChat, identity } from "./signals";
 import {
   decryptAES,
   decryptRSA,
@@ -68,6 +68,7 @@ export const createChat = async (
     displayName,
   };
   await Chats.put(chat);
+  chats.value = await Chats.list();
   const serializedSymmetricKey = await exportSymmetricKey(symmetricKey);
   const data: z.infer<typeof createChatSchema> = {
     type: "CREATE_CHAT",
@@ -96,6 +97,7 @@ const onCreateChat = async (
     displayName: payload.displayName,
   };
   await Chats.put(chat);
+  chats.value = await Chats.list();
 };
 
 export const createMessage = async (messageToSend: string) => {

@@ -7,9 +7,10 @@ import { HomePage } from "./pages/Home";
 import { Loading } from "./components/Loading";
 import { SignInPage } from "./pages/SignIn";
 import { ReconnectingWebSocket } from "./ReconnectingWebSocket";
-import { connected, getIdentity, identity, loading } from "./signals";
+import { chats, connected, getIdentity, identity, loading } from "./signals";
 import { Layout } from "./components/Layout";
 import { exportPublicKey } from "./encryption";
+import { Chats } from "./idb";
 
 export const App = () => {
   useEffect(() => {
@@ -21,6 +22,7 @@ export const App = () => {
         return;
       }
       identity.value = id;
+      chats.value = await Chats.list();
       loading.value = false;
     };
     fn();

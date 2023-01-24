@@ -1,20 +1,22 @@
-import { useLocation } from "wouter-preact";
-import { identity, IDENTITY_STORAGE_NAME } from "../signals";
+import { identity } from "../signals";
 import { Avatar } from "./Avatar";
 import { Button } from "./Button";
-import { profileViewEnabled } from "./Chevron";
 
-type ProfileDropdownProps = {};
+type ProfileDropdownProps = {
+  enabled: boolean;
+  onEdit: () => void;
+  onSignOut: () => void;
+  onSave: () => void;
+};
 
-export const Menu = (props: ProfileDropdownProps) => {
-  const [_, setLocation] = useLocation();
-
+export const Menu = ({
+  enabled,
+  onEdit,
+  onSave,
+  onSignOut,
+}: ProfileDropdownProps) => {
   return (
-    <div
-      className={`text-white p-2 w-full ${
-        profileViewEnabled.value ? "" : "hidden"
-      }`}
-    >
+    <div className={`text-white p-2 w-full ${enabled ? "" : "hidden"}`}>
       <div className="flex justify-evenly items-center p-2">
         <div>
           <Avatar alt={identity.value?.displayName || ""} />
@@ -22,32 +24,14 @@ export const Menu = (props: ProfileDropdownProps) => {
         <span>Username: {identity.value?.displayName}</span>
       </div>
       <div className="flex flex-col justify-evenly py-3">
-        <Button onClick={() => console.log("edit")}>
+        <Button onClick={onEdit}>
           Edit <i className="fa-regular fa-pen-to-square"></i>
         </Button>
-        <Button
-          onClick={() => {
-            localStorage.removeItem(IDENTITY_STORAGE_NAME);
-            identity.value = undefined;
-            setLocation("/");
-          }}
-        >
+        <Button onClick={onSignOut}>
           Sign out <i className="fa-solid fa-right-from-bracket"></i>
         </Button>
-        <Button
-          onClick={() => {
-            const a = document.createElement("a");
-            a.setAttribute(
-              "href",
-              `data:text/plain;charset=utf-8,${encodeURIComponent(
-                localStorage.getItem(IDENTITY_STORAGE_NAME) || ""
-              )}`
-            );
-            a.setAttribute("download", `${crypto.randomUUID()}.json`);
-            a.click();
-          }}
-        >
-          Save identity
+        <Button onClick={onSave}>
+          Save identity <i className="fa-solid fa-download"></i>
         </Button>
       </div>
     </div>
