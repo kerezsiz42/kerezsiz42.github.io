@@ -13,9 +13,9 @@ export const CreatePage = () => {
       if (!identity.value) {
         return;
       }
-      text.value = `${location.protocol}//${
-        location.host
-      }/chat/${await exportPublicKey(identity.value.publicKey)}`;
+      text.value = `${location.protocol}//${location.host}/chat/${
+        identity.value.displayName
+      }/${await exportPublicKey(identity.value.publicKey)}`;
     };
     fn();
   }, [identity.value]);

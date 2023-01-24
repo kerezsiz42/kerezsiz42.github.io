@@ -5,11 +5,18 @@ import { Chevron } from "../components/Chevron";
 import { Menu } from "../components/Menu";
 import { useEffect } from "preact/hooks";
 import { useSignal } from "@preact/signals";
+import { ChatList } from "../components/ChatList";
+import { Chats } from "../idb";
 
 export const HomePage = () => {
-  const entites = useSignal<Chat[]>([]);
+  const chats = useSignal<Chat[]>([]);
 
-  useEffect(() => {}, []);
+  useEffect(() => {
+    const fn = async () => {
+      chats.value = await Chats.list();
+    };
+    fn();
+  }, []);
 
   return (
     <Layout>
@@ -21,7 +28,7 @@ export const HomePage = () => {
       <div className="w-full text-center">
         <span>Status: {connected.value ? "Connected" : "Disconnected"}</span>
       </div>
-      <div className="flex-1"></div>
+      <ChatList chats={chats.value} />
       <Link href="/create">
         <div className="absolute bg-blue-500 w-20 h-20 flex justify-center items-center rounded-[50%] cursor-pointer right-10 bottom-10">
           <i className="fa-solid fa-plus text-3xl"></i>

@@ -1,7 +1,6 @@
 import { useEffect } from "preact/hooks";
 import { Redirect, Route, Switch } from "wouter-preact";
 import { reducer } from "./handler";
-import { initDatabase } from "./idb";
 import { ChatPage } from "./pages/Chat";
 import { CreatePage } from "./pages/Create";
 import { HomePage } from "./pages/Home";
@@ -13,10 +12,6 @@ import { Layout } from "./components/Layout";
 import { exportPublicKey } from "./encryption";
 
 export const App = () => {
-  useEffect(() => {
-    initDatabase();
-  }, []);
-
   useEffect(() => {
     const fn = async () => {
       loading.value = true;
@@ -65,8 +60,10 @@ export const App = () => {
 
   return (
     <Switch>
-      <Route path="/chat/:publicKey">
-        {({ publicKey }) => <ChatPage publicKey={publicKey} />}
+      <Route path="/chat/:displayName/:publicKey">
+        {({ displayName, publicKey }) => (
+          <ChatPage publicKey={publicKey} displayName={displayName} />
+        )}
       </Route>
       <Route path="/create" component={CreatePage} />
       <Route path="/" component={HomePage} />

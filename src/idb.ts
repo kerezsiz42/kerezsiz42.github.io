@@ -1,6 +1,5 @@
 import { openDB, DBSchema, IDBPDatabase } from "idb";
-import { z } from "zod";
-import { Chat, messageSchema } from "./signals";
+import { Chat, Key, Message } from "./signals";
 
 interface NotiDB extends DBSchema {
   chats: {
@@ -10,44 +9,81 @@ interface NotiDB extends DBSchema {
   };
   messages: {
     key: string;
-    value: z.infer<typeof messageSchema>;
+    value: Message;
     indexes: {
       timestamp: number;
     };
   };
+  keys: {
+    key: string;
+    value: Key;
+  };
 }
 
-export let idb: IDBPDatabase<NotiDB> | undefined = undefined;
+let idb: IDBPDatabase<NotiDB> | undefined = undefined;
 
-export const initDatabase = async () => {
-  return await openDB<NotiDB>("noti-db", 1, {
+export const initDatabase = () => {
+  return openDB<NotiDB>("noti-db", 1, {
     upgrade(db) {
       db.createObjectStore("chats", { keyPath: "serializedPublicKey" });
       db.createObjectStore("messages", { keyPath: "sender" }).createIndex(
         "timestamp",
         "timestamp"
       );
+      db.createObjectStore("keys", { keyPath: "serializedPublicKey" });
     },
   });
 };
 
-export const addChat = async (chat: Chat) => {
-  if (!idb) {
-    throw new Error("Idb is undefined");
+export class Keys {
+  public static async put(
+    serializedPublicKey: string,
+    symmetricKey: CryptoKey
+  ) {
+    if (!idb) {
+      idb = await initDatabase();
+    }
+    return await idb.put("keys", { serializedPublicKey, symmetricKey });
   }
-  return await idb.add("chats", chat, chat.serializedPublicKey);
-};
 
-export const getChats = async () => {
-  if (!idb) {
-    throw new Error("Idb is undefined");
+  public static async get(serializedPublicKey: string) {
+    if (!idb) {
+      idb = await initDatabase();
+    }
+    const key = await idb.get("keys", serializedPublicKey);
+    if (!key) {
+      return undefined;
+    }
+    return key.symmetricKey;
   }
-  return await idb.getAll("chats");
-};
+}
+
+export class Chats {
+  public static async put(chat: Chat) {
+    if (!idb) {
+      idb = await initDatabase();
+    }
+    return await idb.put("chats", chat);
+  }
+
+  public static async get(serializedPublicKey: string) {
+    if (!idb) {
+      idb = await initDatabase();
+    }
+    return await idb.get("chats", serializedPublicKey);
+  }
+
+  public static async list() {
+    if (!idb) {
+      idb = await initDatabase();
+    }
+    return await idb.getAll("chats");
+  }
+}
 
 export const getMessagesBySender = async (sender: string) => {
   if (!idb) {
-    throw new Error("Idb is undefined");
+    idb = await initDatabase();
   }
   return await idb.getAll("messages", sender);
 };

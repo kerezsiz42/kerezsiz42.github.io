@@ -3,23 +3,32 @@ import { useEffect } from "preact/hooks";
 import { Link, useLocation } from "wouter-preact";
 import { Avatar } from "../components/Avatar";
 import { Layout } from "../components/Layout";
-import { createChat } from "../handler";
-import { getMessagesBySender } from "../idb";
-import { messages, selectedChat } from "../signals";
+import { createChat, createMessage } from "../handler";
+import { Chats, getMessagesBySender } from "../idb";
+import { currentChat, Message } from "../signals";
 
 type ChatPageProps = {
   publicKey?: string;
+  displayName?: string;
 };
 
-export const ChatPage = ({ publicKey = "" }: ChatPageProps) => {
-  const message = useSignal("");
+export const ChatPage = ({
+  publicKey = "",
+  displayName = "",
+}: ChatPageProps) => {
   const [_, setLocation] = useLocation();
+  const messages = useSignal<Message[]>([]);
+  const messageToSend = useSignal("");
 
   useEffect(() => {
     const fn = async () => {
-      // Look into database to see if chat exists
+      const foundChat = await Chats.get(publicKey);
+      if (foundChat) {
+        currentChat.value = foundChat;
+        return;
+      }
       try {
-        await createChat(publicKey);
+        await createChat(publicKey, displayName);
       } catch {
         setLocation("/");
       }
@@ -32,18 +41,18 @@ export const ChatPage = ({ publicKey = "" }: ChatPageProps) => {
       messages.value = await getMessagesBySender(publicKey);
     };
     fn();
-  }, [selectedChat.value]);
+  }, [currentChat.value]);
 
   return (
     <Layout>
       <div className="flex items-center justify-between p-3 border-b border-gray-500 w-full">
         <div className="flex items-center">
           <Avatar
-            alt={selectedChat.value?.displayName || "User"}
-            src={selectedChat.value?.avatar}
+            alt={currentChat.value?.displayName || "User"}
+            src={currentChat.value?.avatar}
           />
           <h1 className="pl-4 font-bold">
-            {selectedChat.value?.displayName || "Loading..."}
+            {currentChat.value?.displayName || "Loading..."}
           </h1>
         </div>
         <Link href="/">
@@ -63,11 +72,17 @@ export const ChatPage = ({ publicKey = "" }: ChatPageProps) => {
           rows={1}
           onChange={({ target }) => {
             if (target instanceof HTMLTextAreaElement) {
-              message.value = target.value;
+              messageToSend.value = target.value;
             }
           }}
         ></textarea>
-        <button type="button" onClick={() => {}}>
+        <button
+          type="button"
+          onClick={async () => {
+            await createMessage(messageToSend.value);
+            messageToSend.value = "";
+          }}
+        >
           <i className="fa-solid fa-paper-plane py-2 text-2xl pr-3 pl-6 cursor-pointer"></i>
         </button>
       </div>

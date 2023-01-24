@@ -8,7 +8,6 @@ import {
 } from "./encryption";
 
 export type Chat = {
-  symmetricKey: CryptoKey;
   publicKey: CryptoKey;
   serializedPublicKey: string;
   displayName: string;
@@ -21,6 +20,8 @@ export const messageSchema = z.object({
   timestamp: z.number(),
 });
 
+export type Message = z.infer<typeof messageSchema>;
+
 export type Identity = {
   privateKey: CryptoKey;
   publicKey: CryptoKey;
@@ -28,11 +29,12 @@ export type Identity = {
   avatar?: string;
 };
 
+export type Key = { serializedPublicKey: string; symmetricKey: CryptoKey };
+
 export const identity = signal<Identity | undefined>(undefined);
 export const loading = signal<boolean>(true);
 export const connected = signal(false);
-export const selectedChat = signal<Chat | undefined>(undefined);
-export const messages = signal<z.infer<typeof messageSchema>[]>([]);
+export const currentChat = signal<Chat | undefined>(undefined);
 
 export const IDENTITY_STORAGE_NAME = "identity";
 
