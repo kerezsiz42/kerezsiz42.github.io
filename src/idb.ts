@@ -1,22 +1,17 @@
 import { openDB, DBSchema, IDBPDatabase, deleteDB } from "idb";
-import { Chat, Key, Message } from "./signals";
+import { Chat, Message } from "./signals";
 
 interface NotiDB extends DBSchema {
   chats: {
     key: string;
     value: Chat;
-    indexes: {};
   };
   messages: {
     key: string;
     value: Message;
     indexes: {
-      timestamp: number;
+      sender: string;
     };
-  };
-  keys: {
-    key: string;
-    value: Key;
   };
 }
 
@@ -26,11 +21,10 @@ export const initDatabase = () => {
   return openDB<NotiDB>("noti-db", 1, {
     upgrade(db) {
       db.createObjectStore("chats", { keyPath: "serializedPublicKey" });
-      db.createObjectStore("messages", { keyPath: "sender" }).createIndex(
-        "timestamp",
-        "timestamp"
+      db.createObjectStore("messages", { keyPath: "id" }).createIndex(
+        "sender",
+        "sender"
       );
-      db.createObjectStore("keys", { keyPath: "serializedPublicKey" });
     },
   });
 };
@@ -42,29 +36,6 @@ export const clearDatabase = async () => {
   }
   await deleteDB("noti-db");
 };
-
-export class Keys {
-  public static async put(
-    serializedPublicKey: string,
-    symmetricKey: CryptoKey
-  ) {
-    if (!idb) {
-      idb = await initDatabase();
-    }
-    return await idb.put("keys", { serializedPublicKey, symmetricKey });
-  }
-
-  public static async get(serializedPublicKey: string) {
-    if (!idb) {
-      idb = await initDatabase();
-    }
-    const key = await idb.get("keys", serializedPublicKey);
-    if (!key) {
-      return undefined;
-    }
-    return key.symmetricKey;
-  }
-}
 
 export class Chats {
   public static async put(chat: Chat) {
@@ -81,7 +52,7 @@ export class Chats {
     return await idb.get("chats", serializedPublicKey);
   }
 
-  public static async list() {
+  public static async getAll() {
     if (!idb) {
       idb = await initDatabase();
     }
@@ -89,9 +60,48 @@ export class Chats {
   }
 }
 
-export const getMessagesBySender = async (sender: string) => {
-  if (!idb) {
-    idb = await initDatabase();
+export class Messages {
+  public static async getBySender(sender: string) {
+    if (!idb) {
+      idb = await initDatabase();
+    }
+    return await idb.getAllFromIndex("messages", "sender", sender);
   }
-  return await idb.getAll("messages", sender);
-};
+
+  public static async put(message: Message) {
+    if (!idb) {
+      idb = await initDatabase();
+    }
+    return await idb.put("messages", message);
+  }
+
+  public static async get(id: string) {
+    if (!idb) {
+      idb = await initDatabase();
+    }
+    return await idb.get("messages", id);
+  }
+}
+
+// export class Keys {
+//   public static async put(
+//     serializedPublicKey: string,
+//     symmetricKey: CryptoKey
+//   ) {
+//     if (!idb) {
+//       idb = await initDatabase();
+//     }
+//     return await idb.put("keys", { serializedPublicKey, symmetricKey });
+//   }
+
+//   public static async get(serializedPublicKey: string) {
+//     if (!idb) {
+//       idb = await initDatabase();
+//     }
+//     const key = await idb.get("keys", serializedPublicKey);
+//     if (!key) {
+//       return undefined;
+//     }
+//     return key.symmetricKey;
+//   }
+// }

@@ -2,40 +2,41 @@ import { signal, effect } from "@preact/signals";
 import { z } from "zod";
 import {
   exportPrivateKey,
-  exportPublicKey,
   importPrivateKey,
   importPublicKey,
 } from "./encryption";
+import { Chats, clearDatabase, Messages } from "./idb";
 
 export type Chat = {
   publicKey: CryptoKey;
   serializedPublicKey: string;
   displayName: string;
   avatar?: string;
+  symmetricKey?: CryptoKey;
 };
 
-export const messageSchema = z.object({
-  content: z.string(),
-  sender: z.string(),
-  timestamp: z.number(),
-});
-
-export type Message = z.infer<typeof messageSchema>;
+export type Message = {
+  content: string;
+  sender: string;
+  timestamp: number;
+  id: string;
+  synchronized: boolean;
+};
 
 export type Identity = {
   privateKey: CryptoKey;
   publicKey: CryptoKey;
+  serializedPublicKey: string;
   displayName: string;
   avatar?: string;
 };
-
-export type Key = { serializedPublicKey: string; symmetricKey: CryptoKey };
 
 export const identity = signal<Identity | undefined>(undefined);
 export const loading = signal<boolean>(true);
 export const connected = signal(false);
 export const currentChat = signal<Chat | undefined>(undefined);
 export const chats = signal<Chat[]>([]);
+export const messages = signal<Messages[]>([]);
 
 export const IDENTITY_STORAGE_NAME = "identity";
 
@@ -59,13 +60,13 @@ export const loadIdentityFromFile = (
 };
 
 export const exportIdentity = async ({
-  publicKey,
+  serializedPublicKey,
   privateKey,
   displayName,
   avatar,
 }: Identity): Promise<string> => {
   return JSON.stringify({
-    publicKey: await exportPublicKey(publicKey),
+    publicKey: serializedPublicKey,
     privateKey: await exportPrivateKey(privateKey),
     displayName,
     avatar,
@@ -88,13 +89,37 @@ export const importIdentity = async (
   }
   return {
     publicKey: await importPublicKey(parsing.data.publicKey),
+    serializedPublicKey: parsing.data.publicKey,
     privateKey: await importPrivateKey(parsing.data.privateKey),
     displayName: parsing.data.displayName,
+    avatar: parsing.data.avatar,
   };
 };
 
 export const getIdentity = () =>
   importIdentity(localStorage.getItem(IDENTITY_STORAGE_NAME) || '""');
+
+export const deleteIdentity = async () => {
+  identity.value = undefined;
+  localStorage.removeItem(IDENTITY_STORAGE_NAME);
+  await clearDatabase();
+  chats.value = await Chats.getAll();
+};
+
+export const downloadIdentity = async () => {
+  if (!identity.value) {
+    return;
+  }
+  const a = document.createElement("a");
+  a.setAttribute(
+    "href",
+    `data:text/plain;charset=utf-8,${encodeURIComponent(
+      await exportIdentity(identity.value)
+    )}`
+  );
+  a.setAttribute("download", `${crypto.randomUUID()}.json`);
+  a.click();
+};
 
 effect(async () => {
   if (!identity.value) {

@@ -23,6 +23,9 @@ export const ChatList = ({ chats }: ChatListProps) => {
               <Avatar alt={chat.displayName} />
               <span className="px-4 text-xl">{chat.displayName}</span>
             </div>
+            {/* <Link href="">
+              <i className="fa-solid fa-pen-to-square border-2 p-2 border-white rounded-[50%]"></i>
+            </Link> */}
           </div>
         </Link>
       ))}

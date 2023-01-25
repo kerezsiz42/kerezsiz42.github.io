@@ -1,28 +1,23 @@
 import { useEffect } from "preact/hooks";
 import { Redirect, Route, Switch } from "wouter-preact";
-import { reducer } from "./handler";
 import { ChatPage } from "./pages/Chat";
 import { CreatePage } from "./pages/Create";
 import { HomePage } from "./pages/Home";
 import { Loading } from "./components/Loading";
 import { SignInPage } from "./pages/SignIn";
 import { ReconnectingWebSocket } from "./ReconnectingWebSocket";
-import { chats, connected, getIdentity, identity, loading } from "./signals";
+import { connected, getIdentity, identity, loading } from "./signals";
 import { Layout } from "./components/Layout";
-import { exportPublicKey } from "./encryption";
-import { Chats } from "./idb";
+import { reducer } from "./handlers";
 
 export const App = () => {
   useEffect(() => {
     const fn = async () => {
       loading.value = true;
       const id = await getIdentity();
-      if (!id) {
-        loading.value = false;
-        return;
+      if (id) {
+        identity.value = id;
       }
-      identity.value = id;
-      chats.value = await Chats.list();
       loading.value = false;
     };
     fn();
@@ -30,21 +25,16 @@ export const App = () => {
 
   useEffect(() => {
     const ac = new AbortController();
-    const fn = async () => {
-      const socket = new ReconnectingWebSocket(ac.signal);
-      if (!identity.value) {
-        ac.abort();
-        return;
-      }
-      socket.connect(
-        `wss://noti-relay.deno.dev?id=${await exportPublicKey(
-          identity.value.publicKey
-        )}`,
-        (isConnected) => (connected.value = isConnected),
-        reducer
-      );
-    };
-    fn();
+    const socket = new ReconnectingWebSocket(ac.signal);
+    if (!identity.value) {
+      ac.abort();
+      return;
+    }
+    socket.connect(
+      `wss://noti-relay.deno.dev?id=${identity.value.serializedPublicKey}`,
+      (isConnected) => (connected.value = isConnected),
+      reducer
+    );
     return () => ac.abort();
   }, [identity.value]);
 

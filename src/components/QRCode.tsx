@@ -1,5 +1,4 @@
-import { createRef } from "preact";
-import { useEffect } from "preact/hooks";
+import { useSignal } from "@preact/signals";
 import { toString } from "qrcode";
 
 type QRCodeProps = {
@@ -8,23 +7,20 @@ type QRCodeProps = {
 };
 
 export const QRCode = ({ text, className }: QRCodeProps) => {
-  const ref = createRef();
-  useEffect(() => {
-    toString(
-      text,
-      {
-        type: "svg",
-        errorCorrectionLevel: "low",
-        margin: 1,
-      },
-      (_, svg) => {
-        if (svg === undefined) {
-          ref.current.innerHTML = "";
-          return;
-        }
-        ref.current.innerHTML = svg;
-      }
-    );
-  }, [text]);
-  return <div ref={ref} className={className}></div>;
+  const svgMarkup = useSignal("");
+  toString(
+    text,
+    {
+      type: "svg",
+      errorCorrectionLevel: "low",
+      margin: 1,
+    },
+    (_, svg) => (svgMarkup.value = svg || "")
+  );
+  return (
+    <div
+      className={className}
+      dangerouslySetInnerHTML={{ __html: svgMarkup.value }}
+    ></div>
+  );
 };

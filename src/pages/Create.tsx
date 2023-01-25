@@ -9,15 +9,10 @@ export const CreatePage = () => {
   const text = useSignal("");
 
   useEffect(() => {
-    const fn = async () => {
-      if (!identity.value) {
-        return;
-      }
-      text.value = `${location.protocol}//${location.host}/chat/${
-        identity.value.displayName
-      }/${await exportPublicKey(identity.value.publicKey)}`;
-    };
-    fn();
+    if (!identity.value) {
+      return;
+    }
+    text.value = `${location.protocol}//${location.host}/chat/${identity.value.displayName}/${identity.value.serializedPublicKey}`;
   }, [identity.value]);
 
   return (

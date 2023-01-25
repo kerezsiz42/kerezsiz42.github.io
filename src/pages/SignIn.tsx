@@ -2,6 +2,7 @@ import { Layout } from "../components/Layout";
 import { identity, loadIdentityFromFile, loading } from "../signals";
 import { useSignal } from "@preact/signals";
 import { Loading } from "../components/Loading";
+import { exportPublicKey } from "../encryption";
 
 export const SignInPage = () => {
   const displayName = useSignal<string>("");
@@ -50,6 +51,7 @@ export const SignInPage = () => {
             );
             identity.value = {
               publicKey,
+              serializedPublicKey: await exportPublicKey(publicKey),
               privateKey,
               displayName: displayName.value,
             };
