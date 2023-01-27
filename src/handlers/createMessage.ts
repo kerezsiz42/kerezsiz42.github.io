@@ -1,38 +1,27 @@
 import { z } from "zod";
-import { createMessageSchema, send } from ".";
-import { encryptAES } from "../encryption";
-import { Messages, Chats } from "../idb";
-import { identity, Message } from "../signals";
+import { createMessageSchema, sendWithAES } from ".";
+import { Messages } from "../idb";
+import { Message } from "../types";
 
 export const createMessage = async (
   serializedPublicKey: string,
-  content: string
+  content: string,
+  ownSerializedPublicKey: string
 ) => {
-  if (!identity.value) {
-    throw new Error("no identity");
-  }
+  const timestamp = Date.now();
+  const entryId = crypto.randomUUID();
   const message: Message = {
-    sender: identity.value.serializedPublicKey,
+    sender: ownSerializedPublicKey,
     content,
-    timestamp: Date.now(),
-    id: crypto.randomUUID(),
-    synchronized: false,
+    timestamp,
+    entryId,
   };
   await Messages.put(message);
-  const data: z.infer<typeof createMessageSchema> = {
+  const createMessagePayload: z.infer<typeof createMessageSchema> = {
     type: "MESSAGE",
-    content: message.content,
-    timestamp: message.timestamp,
-    id: message.id,
+    content,
+    timestamp,
+    entryId,
   };
-  const chat = await Chats.get(serializedPublicKey);
-  if (!chat || !chat.symmetricKey) {
-    return;
-  }
-  const { iv, ciphertext } = await encryptAES(chat.symmetricKey, data);
-  await send(serializedPublicKey, {
-    iv,
-    publicKey: identity.value.serializedPublicKey,
-    ciphertext,
-  });
+  await sendWithAES(serializedPublicKey, createMessagePayload);
 };

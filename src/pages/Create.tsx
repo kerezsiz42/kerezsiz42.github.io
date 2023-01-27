@@ -1,20 +1,15 @@
-import { useSignal } from "@preact/signals";
-import { useEffect } from "preact/hooks";
 import { Layout } from "../components/Layout";
 import { QRCode } from "../components/QRCode";
-import { exportPublicKey } from "../encryption";
-import { identity } from "../signals";
+import { Identity } from "../types";
 
-export const CreatePage = () => {
-  const text = useSignal("");
+type CreatePageProps = {
+  identity: Identity;
+};
 
-  useEffect(() => {
-    if (!identity.value) {
-      return;
-    }
-    text.value = `${location.protocol}//${location.host}/chat/${identity.value.displayName}/${identity.value.serializedPublicKey}`;
-  }, [identity.value]);
-
+export const CreatePage = ({ identity }: CreatePageProps) => {
+  const text = `${location.protocol}//${
+    location.host
+  }/chat/${encodeURIComponent(identity.serializedPublicKey)}`;
   return (
     <Layout>
       <h1 className="text-center m-1 text-xl">Create a new conversation</h1>
@@ -24,15 +19,14 @@ export const CreatePage = () => {
           link provided below via a trusted medium. Generally, you should never
           click on links that you do not trust.
         </p>
-        <QRCode text={text.value} className="p-3 w-full" />
+        <QRCode text={text} className="p-3 w-full" />
         <textarea
-          title={text.value}
+          title={text}
+          value={text}
           className="w-full focus:outline-none bg-slate-800 p-3 rounded border-white border resize-none"
           rows={3}
           disabled
-        >
-          {text.value}
-        </textarea>
+        />
       </div>
     </Layout>
   );

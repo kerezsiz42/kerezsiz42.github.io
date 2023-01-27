@@ -1,47 +1,25 @@
 import { z } from "zod";
-import { createChatSchema, send } from ".";
-import {
-  importPublicKey,
-  SYMMETRIC_ALGORITHM,
-  exportSymmetricKey,
-  encryptRSA,
-} from "../encryption";
+import { createChatSchema, sendWithAES } from ".";
 import { Chats } from "../idb";
-import { identity, Chat, chats, currentChat } from "../signals";
+import { Chat } from "../types";
 
 export const createChat = async (
   serializedPublicKey: string,
-  displayName: string
+  displayName: string,
+  avatar?: string
 ) => {
-  const publicKey = await importPublicKey(serializedPublicKey);
-  const symmetricKey = await crypto.subtle.generateKey(
-    SYMMETRIC_ALGORITHM,
-    true,
-    ["encrypt", "decrypt"]
-  );
-  if (!identity.value) {
-    throw new Error("no identity");
-  }
+  const entryId = crypto.randomUUID();
   const chat: Chat = {
-    publicKey,
+    entryId,
     serializedPublicKey,
     displayName,
-    symmetricKey,
   };
   await Chats.put(chat);
-  chats.value = await Chats.getAll();
-  const serializedSymmetricKey = await exportSymmetricKey(symmetricKey);
-  const data: z.infer<typeof createChatSchema> = {
+  const createChatPayload: z.infer<typeof createChatSchema> = {
     type: "CHAT",
-    displayName: identity.value.displayName,
-    symmetricKey: serializedSymmetricKey,
+    entryId,
+    displayName,
+    avatar,
   };
-  const ciphertext = await encryptRSA(publicKey, data);
-  await send(serializedPublicKey, {
-    publicKey: identity.value.serializedPublicKey,
-    ciphertext,
-  });
-  if (!currentChat.value) {
-    currentChat.value = chat;
-  }
+  await sendWithAES(serializedPublicKey, createChatPayload);
 };

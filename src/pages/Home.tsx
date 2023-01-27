@@ -1,12 +1,13 @@
 import { Layout } from "../components/Layout";
 import { Link } from "wouter-preact";
-import { Chat, connected, deleteIdentity, downloadIdentity } from "../signals";
+import { connected, deleteIdentity, downloadIdentity } from "../signals";
 import { Chevron } from "../components/Chevron";
 import { Menu } from "../components/Menu";
 import { useSignal } from "@preact/signals";
 import { ChatList } from "../components/ChatList";
 import { useEffect } from "preact/hooks";
 import { Chats } from "../idb";
+import { Chat } from "../types";
 
 export const HomePage = () => {
   const enabled = useSignal<boolean>(false);

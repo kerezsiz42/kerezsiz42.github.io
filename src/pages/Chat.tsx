@@ -6,46 +6,35 @@ import { Layout } from "../components/Layout";
 import { createChat } from "../handlers/createChat";
 import { createMessage } from "../handlers/createMessage";
 import { Chats, Messages } from "../idb";
-import { currentChat, identity, Message } from "../signals";
+import { currentChat } from "../signals";
+import { Identity, Message } from "../types";
 
 type ChatPageProps = {
-  publicKey?: string;
-  displayName?: string;
+  publicKey: string;
+  identity: Identity;
 };
 
-export const ChatPage = ({
-  publicKey = "",
-  displayName = "",
-}: ChatPageProps) => {
+export const ChatPage = ({ publicKey, identity }: ChatPageProps) => {
   const [_, setLocation] = useLocation();
   const messages = useSignal<Message[]>([]);
-  const messageToSend = useSignal("");
+  const text = useSignal("");
 
   useEffect(() => {
+    if (publicKey === identity.serializedPublicKey) {
+      setLocation("/");
+      return;
+    }
     const fn = async () => {
-      if (identity.value && publicKey === identity.value.serializedPublicKey) {
-        setLocation("/");
-      }
       const foundChat = await Chats.get(publicKey);
-      if (foundChat) {
-        currentChat.value = foundChat;
+      if (!foundChat) {
+        await createChat(publicKey, identity.displayName, identity.avatar);
         return;
       }
-      try {
-        await createChat(publicKey, displayName);
-      } catch {
-        setLocation("/");
-      }
-    };
-    fn();
-  }, []);
-
-  useEffect(() => {
-    const fn = async () => {
+      currentChat.value = foundChat;
       messages.value = await Messages.getBySender(publicKey);
     };
     fn();
-  }, [currentChat.value]);
+  }, []);
 
   return (
     <Layout>
@@ -81,21 +70,25 @@ export const ChatPage = ({
           placeholder="Type your message..."
           autofocus
           rows={1}
-          value={messageToSend.value}
+          value={text.value}
           onChange={({ target }) => {
             if (target instanceof HTMLTextAreaElement) {
-              messageToSend.value = target.value;
+              text.value = target.value;
             }
           }}
         ></textarea>
         <button
           type="button"
           onClick={async () => {
-            if (messageToSend.value === "") {
+            if (text.value === "") {
               return;
             }
-            await createMessage(publicKey, messageToSend.value);
-            messageToSend.value = "";
+            await createMessage(
+              publicKey,
+              text.value,
+              identity.serializedPublicKey
+            );
+            text.value = "";
           }}
         >
           <i className="fa-solid fa-paper-plane py-2 text-2xl pr-3 pl-6 cursor-pointer outline-none"></i>

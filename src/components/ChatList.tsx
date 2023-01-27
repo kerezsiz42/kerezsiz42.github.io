@@ -1,5 +1,5 @@
 import { Link } from "wouter-preact";
-import { Chat } from "../signals";
+import { Chat } from "../types";
 import { Avatar } from "./Avatar";
 
 type ChatListProps = {
@@ -12,7 +12,9 @@ export const ChatList = ({ chats }: ChatListProps) => {
       {chats.map((chat, index) => (
         <Link
           className="cursor-pointer"
-          href={`${location.protocol}//${location.host}/chat/${chat.displayName}/${chat.serializedPublicKey}`}
+          href={`${location.protocol}//${
+            location.host
+          }/chat/${encodeURIComponent(chat.serializedPublicKey)}`}
         >
           <div
             className={`flex items-center justify-between border border-gray-500 rounded font-bold py-4 px-8 ${

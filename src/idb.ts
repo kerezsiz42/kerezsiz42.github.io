@@ -1,17 +1,25 @@
 import { openDB, DBSchema, IDBPDatabase, deleteDB } from "idb";
-import { Chat, Message } from "./signals";
+import { Chat, KeyRecord, Message } from "./types";
 
 interface NotiDB extends DBSchema {
   chats: {
     key: string;
     value: Chat;
+    indexes: {
+      entryId: string;
+    };
   };
   messages: {
     key: string;
     value: Message;
     indexes: {
+      entryId: string;
       sender: string;
     };
+  };
+  keyRecords: {
+    key: string;
+    value: KeyRecord;
   };
 }
 
@@ -20,11 +28,14 @@ let idb: IDBPDatabase<NotiDB> | undefined = undefined;
 export const initDatabase = () => {
   return openDB<NotiDB>("noti-db", 1, {
     upgrade(db) {
-      db.createObjectStore("chats", { keyPath: "serializedPublicKey" });
+      db.createObjectStore("chats", {
+        keyPath: "serializedPublicKey",
+      });
       db.createObjectStore("messages", { keyPath: "id" }).createIndex(
         "sender",
         "sender"
       );
+      db.createObjectStore("keyRecords", { keyPath: "serializedPublicKey" });
     },
   });
 };
@@ -83,25 +94,18 @@ export class Messages {
   }
 }
 
-// export class Keys {
-//   public static async put(
-//     serializedPublicKey: string,
-//     symmetricKey: CryptoKey
-//   ) {
-//     if (!idb) {
-//       idb = await initDatabase();
-//     }
-//     return await idb.put("keys", { serializedPublicKey, symmetricKey });
-//   }
+export class KeyRecords {
+  public static async put(keyRecord: KeyRecord) {
+    if (!idb) {
+      idb = await initDatabase();
+    }
+    return await idb.put("keyRecords", keyRecord);
+  }
 
-//   public static async get(serializedPublicKey: string) {
-//     if (!idb) {
-//       idb = await initDatabase();
-//     }
-//     const key = await idb.get("keys", serializedPublicKey);
-//     if (!key) {
-//       return undefined;
-//     }
-//     return key.symmetricKey;
-//   }
-// }
+  public static async get(serializedPublicKey: string) {
+    if (!idb) {
+      idb = await initDatabase();
+    }
+    return await idb.get("keyRecords", serializedPublicKey);
+  }
+}

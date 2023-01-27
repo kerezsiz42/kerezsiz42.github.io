@@ -1,31 +1,39 @@
 import { z } from "zod";
 import { identity } from "../signals";
-import { decryptAES, decryptRSA } from "../encryption";
-import { Chats } from "../idb";
+import {
+  decryptAES,
+  decryptRSA,
+  encryptAES,
+  encryptRSA,
+  importPublicKey,
+} from "../encryption";
+import { KeyRecords } from "../idb";
 import { onCreateChat } from "./onCreateChat";
 import { onCreateMessage } from "./onCreateMessage";
-import { onReceived } from "./onReceived";
+import { createKey } from "./createKey";
+import { onCreateKey } from "./onCreateKey";
 
-export const createMessageSchema = z.object({
-  type: z.literal("MESSAGE"),
-  content: z.string(),
-  timestamp: z.number(),
-  id: z.string(),
-});
-
-export const receiveMessageSchema = z.object({
-  type: z.literal("RECEIVED"),
-  id: z.string(),
+export const createKeySchema = z.object({
+  type: z.literal("KEY"),
+  entryId: z.string(),
+  symmetricKey: z.string(),
 });
 
 export const createChatSchema = z.object({
   type: z.literal("CHAT"),
-  symmetricKey: z.string(),
+  entryId: z.string(),
   displayName: z.string(),
   avatar: z.string().optional(),
 });
 
-const dataSchema = z.object({
+export const createMessageSchema = z.object({
+  type: z.literal("MESSAGE"),
+  entryId: z.string(),
+  content: z.string(),
+  timestamp: z.number(),
+});
+
+export const dataSchema = z.object({
   iv: z.string().optional(),
   publicKey: z.string(),
   ciphertext: z.string(),
@@ -36,7 +44,9 @@ export const send = async (
   data: z.infer<typeof dataSchema>
 ) => {
   const body = JSON.stringify(data);
-  const url = `https://noti-relay.deno.dev?id=${destinationPublicKey}`;
+  const url = `https://noti-relay.deno.dev?id=${encodeURIComponent(
+    destinationPublicKey
+  )}`;
   const res = await fetch(url, { method: "POST", body });
   if (!res.ok) {
     throw new Error(
@@ -45,48 +55,90 @@ export const send = async (
   }
 };
 
-export const reducer = async (data: any) => {
-  const result = dataSchema.safeParse(data);
-  if (!result.success) {
+export const sendWithRSA = async (
+  destinationPublicKey: string,
+  payload: any
+) => {
+  if (!identity.value) {
     return;
   }
-  let payload;
-  if (result.data.iv) {
-    const chat = await Chats.get(result.data.publicKey);
-    if (!chat || !chat.symmetricKey) {
-      return;
-    }
-    payload = await decryptAES(
-      chat.symmetricKey,
-      result.data.iv,
-      result.data.ciphertext
-    );
-  } else {
-    if (!identity.value) {
-      throw new Error("no identity");
-    }
-    payload = await decryptRSA(
-      identity.value.privateKey,
-      result.data.ciphertext
-    );
+  const publicKey = await importPublicKey(destinationPublicKey);
+  const data: z.infer<typeof dataSchema> = {
+    publicKey: identity.value.serializedPublicKey,
+    ciphertext: await encryptRSA(publicKey, payload),
+  };
+  await send(destinationPublicKey, data);
+};
+
+export const sendWithAES = async (
+  destinationPublicKey: string,
+  payload: any
+) => {
+  if (!identity.value) {
+    return;
   }
-  console.log(payload);
+  const keyRecord = await KeyRecords.get(destinationPublicKey);
+  if (!keyRecord) {
+    return;
+  }
+  const { iv, ciphertext } = await encryptAES(keyRecord.symmetricKey, payload);
+  const data: z.infer<typeof dataSchema> = {
+    iv,
+    publicKey: identity.value.serializedPublicKey,
+    ciphertext,
+  };
+  await send(destinationPublicKey, data);
+};
+
+export const reducer = async (data: any) => {
+  const result = dataSchema.safeParse(data);
+  if (!result.success || !identity.value) {
+    return;
+  }
+  let deciphered;
+  try {
+    if (result.data.iv) {
+      const keyRecord = await KeyRecords.get(result.data.publicKey);
+      if (!keyRecord) {
+        await createKey(result.data.publicKey);
+        return;
+      }
+      deciphered = await decryptAES(
+        keyRecord.symmetricKey,
+        result.data.iv,
+        result.data.ciphertext
+      );
+    } else {
+      deciphered = await decryptRSA(
+        identity.value.privateKey,
+        result.data.ciphertext
+      );
+    }
+  } catch {
+    return;
+  }
+  console.log(deciphered);
   const payloadResult = z
     .discriminatedUnion("type", [
       createChatSchema,
       createMessageSchema,
-      receiveMessageSchema,
+      createKeySchema,
     ])
-    .safeParse(payload);
+    .safeParse(deciphered);
   if (!payloadResult.success) {
     return;
   }
   switch (payloadResult.data.type) {
+    case "KEY":
+      return onCreateKey(result.data.publicKey, payloadResult.data);
     case "MESSAGE":
       return onCreateMessage(result.data.publicKey, payloadResult.data);
     case "CHAT":
-      return onCreateChat(result.data.publicKey, payloadResult.data);
-    case "RECEIVED":
-      return onReceived(payloadResult.data);
+      return onCreateChat(
+        result.data.publicKey,
+        payloadResult.data,
+        identity.value.displayName,
+        identity.value.avatar
+      );
   }
 };

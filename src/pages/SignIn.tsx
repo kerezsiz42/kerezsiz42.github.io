@@ -2,7 +2,7 @@ import { Layout } from "../components/Layout";
 import { identity, loadIdentityFromFile, loading } from "../signals";
 import { useSignal } from "@preact/signals";
 import { Loading } from "../components/Loading";
-import { exportPublicKey } from "../encryption";
+import { exportPublicKey, generateKeyPair } from "../encryption";
 
 export const SignInPage = () => {
   const displayName = useSignal<string>("");
@@ -39,16 +39,7 @@ export const SignInPage = () => {
               loading.value = false;
               return;
             }
-            const { publicKey, privateKey } = await crypto.subtle.generateKey(
-              {
-                name: "RSA-OAEP",
-                modulusLength: 4096,
-                publicExponent: new Uint8Array([1, 0, 1]),
-                hash: "SHA-256",
-              },
-              true,
-              ["encrypt", "decrypt"]
-            );
+            const { publicKey, privateKey } = await generateKeyPair();
             identity.value = {
               publicKey,
               serializedPublicKey: await exportPublicKey(publicKey),

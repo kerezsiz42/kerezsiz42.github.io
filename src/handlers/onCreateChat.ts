@@ -1,19 +1,29 @@
 import { z } from "zod";
-import { createChatSchema } from ".";
-import { importPublicKey, importSymmetricKey } from "../encryption";
+import { createChatSchema, sendWithAES } from ".";
 import { Chats } from "../idb";
-import { Chat, chats } from "../signals";
+import { Chat } from "../types";
 
 export const onCreateChat = async (
   serializedPublicKey: string,
-  payload: z.infer<typeof createChatSchema>
+  payload: z.infer<typeof createChatSchema>,
+  displayName: string,
+  avatar?: string
 ) => {
+  const exisitingChat = await Chats.get(serializedPublicKey);
+  if (exisitingChat && exisitingChat.entryId === payload.entryId) {
+    return;
+  }
   const chat: Chat = {
-    publicKey: await importPublicKey(serializedPublicKey),
     serializedPublicKey,
     displayName: payload.displayName,
-    symmetricKey: await importSymmetricKey(payload.symmetricKey),
+    entryId: payload.entryId,
   };
   await Chats.put(chat);
-  chats.value = await Chats.getAll();
+  const responsePayload: z.infer<typeof createChatSchema> = {
+    type: payload.type,
+    entryId: payload.entryId,
+    displayName,
+    avatar,
+  };
+  await sendWithAES(serializedPublicKey, responsePayload);
 };

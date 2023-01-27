@@ -1,35 +1,15 @@
 import { signal, effect } from "@preact/signals";
 import { z } from "zod";
+import { AwaitableEvents } from "./AwaitableEvents";
 import {
   exportPrivateKey,
   importPrivateKey,
   importPublicKey,
 } from "./encryption";
+import { reducer } from "./handlers";
 import { Chats, clearDatabase, Messages } from "./idb";
-
-export type Chat = {
-  publicKey: CryptoKey;
-  serializedPublicKey: string;
-  displayName: string;
-  avatar?: string;
-  symmetricKey?: CryptoKey;
-};
-
-export type Message = {
-  content: string;
-  sender: string;
-  timestamp: number;
-  id: string;
-  synchronized: boolean;
-};
-
-export type Identity = {
-  privateKey: CryptoKey;
-  publicKey: CryptoKey;
-  serializedPublicKey: string;
-  displayName: string;
-  avatar?: string;
-};
+import { ReconnectingWebSocket } from "./ReconnectingWebSocket";
+import { Identity, Chat } from "./types";
 
 export const identity = signal<Identity | undefined>(undefined);
 export const loading = signal<boolean>(true);
@@ -38,7 +18,34 @@ export const currentChat = signal<Chat | undefined>(undefined);
 export const chats = signal<Chat[]>([]);
 export const messages = signal<Messages[]>([]);
 
-export const IDENTITY_STORAGE_NAME = "identity";
+const ac = new AbortController();
+export const socket = new ReconnectingWebSocket(ac.signal);
+
+const IDENTITY_STORAGE_NAME = "identity";
+
+effect(async () => {
+  if (!identity.value) {
+    return;
+  }
+  localStorage.setItem(
+    IDENTITY_STORAGE_NAME,
+    await exportIdentity(identity.value)
+  );
+});
+
+effect(() => {
+  ac.abort();
+  if (!identity.value) {
+    return;
+  }
+  socket.connect(
+    `wss://noti-relay.deno.dev?id=${encodeURIComponent(
+      identity.value.serializedPublicKey
+    )}`,
+    (isConnected) => (connected.value = isConnected),
+    reducer
+  );
+});
 
 export const loadIdentityFromFile = (
   fileList: FileList
@@ -120,13 +127,3 @@ export const downloadIdentity = async () => {
   a.setAttribute("download", `${crypto.randomUUID()}.json`);
   a.click();
 };
-
-effect(async () => {
-  if (!identity.value) {
-    return;
-  }
-  localStorage.setItem(
-    IDENTITY_STORAGE_NAME,
-    await exportIdentity(identity.value)
-  );
-});

@@ -1,5 +1,5 @@
 export const stringToBytes = (str: string) => {
-  const binary = window.atob(decodeURIComponent(str));
+  const binary = window.atob(str);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
     bytes[i] = binary.charCodeAt(i);
@@ -8,15 +8,15 @@ export const stringToBytes = (str: string) => {
 };
 
 export const bytesToString = (bytes: Uint8Array) => {
-  return encodeURIComponent(window.btoa(String.fromCharCode(...bytes)));
+  return window.btoa(String.fromCharCode(...bytes));
 };
 
-export const ASYMMETRIC_ALOGRITHM = {
+const ASYMMETRIC_ALOGRITHM = {
   name: "RSA-OAEP",
   hash: { name: "SHA-256" },
 };
 
-export const SYMMETRIC_ALGORITHM = {
+const SYMMETRIC_ALGORITHM = {
   name: "AES-GCM",
   length: 256,
 };
@@ -132,4 +132,24 @@ export const decryptRSA = async (
     stringToBytes(ciphertext)
   );
   return JSON.parse(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+};
+
+export const generateSymmetricKey = () => {
+  return crypto.subtle.generateKey(SYMMETRIC_ALGORITHM, true, [
+    "encrypt",
+    "decrypt",
+  ]);
+};
+
+export const generateKeyPair = () => {
+  return crypto.subtle.generateKey(
+    {
+      name: "RSA-OAEP",
+      modulusLength: 4096,
+      publicExponent: new Uint8Array([1, 0, 1]),
+      hash: "SHA-256",
+    },
+    true,
+    ["encrypt", "decrypt"]
+  );
 };
