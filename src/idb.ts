@@ -13,8 +13,8 @@ interface NotiDB extends DBSchema {
     key: string;
     value: Message;
     indexes: {
-      entryId: string;
       sender: string;
+      recipient: string;
     };
   };
   keyRecords: {
@@ -31,10 +31,9 @@ export const initDatabase = () => {
       db.createObjectStore("chats", {
         keyPath: "serializedPublicKey",
       });
-      db.createObjectStore("messages", { keyPath: "id" }).createIndex(
-        "sender",
-        "sender"
-      );
+      const messages = db.createObjectStore("messages", { keyPath: "entryId" });
+      messages.createIndex("sender", "sender");
+      messages.createIndex("recipient", "recipient");
       db.createObjectStore("keyRecords", { keyPath: "serializedPublicKey" });
     },
   });
@@ -72,11 +71,18 @@ export class Chats {
 }
 
 export class Messages {
-  public static async getBySender(sender: string) {
+  public static async getAll(senderOrRecipient: string) {
     if (!idb) {
       idb = await initDatabase();
     }
-    return await idb.getAllFromIndex("messages", "sender", sender);
+    return (
+      await Promise.all([
+        idb.getAllFromIndex("messages", "sender", senderOrRecipient),
+        idb.getAllFromIndex("messages", "recipient", senderOrRecipient),
+      ])
+    )
+      .flat()
+      .sort((a, b) => b.createdAt - a.createdAt);
   }
 
   public static async put(message: Message) {

@@ -5,7 +5,7 @@ export class AwaitableEvents<T> {
     this.eventTarget = new EventTarget();
   }
 
-  public waitEvent(eventName: string, timeout: number): Promise<T | undefined> {
+  public waitFor(eventName: string, timeout: number): Promise<T | undefined> {
     return new Promise((resolve) => {
       const timeoutId = setTimeout(() => resolve(undefined), timeout);
       const listener = (e: CustomEventInit<T>) => {

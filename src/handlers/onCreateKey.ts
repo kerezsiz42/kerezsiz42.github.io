@@ -3,6 +3,7 @@ import { createKeySchema, sendWithRSA } from ".";
 import { importSymmetricKey } from "../encryption";
 import { KeyRecords } from "../idb";
 import { KeyRecord } from "../types";
+import { keyRecordAwaiter } from "./createKey";
 
 export const onCreateKey = async (
   serializedPublicKey: string,
@@ -13,16 +14,17 @@ export const onCreateKey = async (
     return;
   }
   const symmetricKey = await importSymmetricKey(payload.symmetricKey);
-  const newKeyRecord: KeyRecord = {
+  const keyRecord: KeyRecord = {
     entryId: payload.entryId,
     serializedPublicKey,
     symmetricKey,
   };
-  await KeyRecords.put(newKeyRecord);
-  const responsePayload: z.infer<typeof createKeySchema> = {
-    type: "KEY",
+  await KeyRecords.put(keyRecord);
+  keyRecordAwaiter.dispatch(payload.entryId, keyRecord);
+  const createKeyPayload: z.infer<typeof createKeySchema> = {
+    type: payload.type,
     entryId: payload.entryId,
     symmetricKey: payload.symmetricKey,
   };
-  await sendWithRSA(serializedPublicKey, responsePayload);
+  await sendWithRSA(serializedPublicKey, createKeyPayload);
 };

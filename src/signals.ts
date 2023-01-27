@@ -1,50 +1,33 @@
 import { signal, effect } from "@preact/signals";
 import { z } from "zod";
-import { AwaitableEvents } from "./AwaitableEvents";
 import {
   exportPrivateKey,
   importPrivateKey,
   importPublicKey,
 } from "./encryption";
-import { reducer } from "./handlers";
-import { Chats, clearDatabase, Messages } from "./idb";
-import { ReconnectingWebSocket } from "./ReconnectingWebSocket";
-import { Identity, Chat } from "./types";
+import { Chats, clearDatabase } from "./idb";
+import { Identity, Chat, KeyRecord, Message } from "./types";
 
-export const identity = signal<Identity | undefined>(undefined);
 export const loading = signal<boolean>(true);
 export const connected = signal(false);
+export const identity = signal<Identity | undefined>(undefined);
 export const currentChat = signal<Chat | undefined>(undefined);
+export const currentKeyRecord = signal<KeyRecord | undefined>(undefined);
 export const chats = signal<Chat[]>([]);
-export const messages = signal<Messages[]>([]);
-
-const ac = new AbortController();
-export const socket = new ReconnectingWebSocket(ac.signal);
+export const messages = signal<Message[]>([]);
 
 const IDENTITY_STORAGE_NAME = "identity";
 
 effect(async () => {
   if (!identity.value) {
+    chats.value = [];
     return;
   }
   localStorage.setItem(
     IDENTITY_STORAGE_NAME,
     await exportIdentity(identity.value)
   );
-});
-
-effect(() => {
-  ac.abort();
-  if (!identity.value) {
-    return;
-  }
-  socket.connect(
-    `wss://noti-relay.deno.dev?id=${encodeURIComponent(
-      identity.value.serializedPublicKey
-    )}`,
-    (isConnected) => (connected.value = isConnected),
-    reducer
-  );
+  chats.value = await Chats.getAll();
 });
 
 export const loadIdentityFromFile = (

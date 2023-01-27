@@ -1,7 +1,10 @@
 import { z } from "zod";
 import { createChatSchema, sendWithAES } from ".";
+import { AwaitableEvents } from "../AwaitableEvents";
 import { Chats } from "../idb";
 import { Chat } from "../types";
+
+export const chatAwaiter = new AwaitableEvents<Chat>();
 
 export const createChat = async (
   serializedPublicKey: string,
@@ -9,12 +12,6 @@ export const createChat = async (
   avatar?: string
 ) => {
   const entryId = crypto.randomUUID();
-  const chat: Chat = {
-    entryId,
-    serializedPublicKey,
-    displayName,
-  };
-  await Chats.put(chat);
   const createChatPayload: z.infer<typeof createChatSchema> = {
     type: "CHAT",
     entryId,
@@ -22,4 +19,9 @@ export const createChat = async (
     avatar,
   };
   await sendWithAES(serializedPublicKey, createChatPayload);
+  const chat = await chatAwaiter.waitFor(entryId, 3000);
+  if (!chat) {
+    throw new Error("Failed to create new chat with peer.");
+  }
+  return chat;
 };

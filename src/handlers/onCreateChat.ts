@@ -1,7 +1,9 @@
 import { z } from "zod";
 import { createChatSchema, sendWithAES } from ".";
 import { Chats } from "../idb";
+import { chats } from "../signals";
 import { Chat } from "../types";
+import { chatAwaiter } from "./createChat";
 
 export const onCreateChat = async (
   serializedPublicKey: string,
@@ -19,6 +21,8 @@ export const onCreateChat = async (
     entryId: payload.entryId,
   };
   await Chats.put(chat);
+  chats.value = [chat, ...chats.value];
+  chatAwaiter.dispatch(payload.entryId, chat);
   const responsePayload: z.infer<typeof createChatSchema> = {
     type: payload.type,
     entryId: payload.entryId,

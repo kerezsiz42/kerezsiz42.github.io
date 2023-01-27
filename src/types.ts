@@ -9,7 +9,9 @@ export type Message = {
   entryId: string;
   content: string;
   sender: string;
-  timestamp: number;
+  recipient: string;
+  createdAt: number;
+  receivedAt?: number;
 };
 
 export type Identity = {

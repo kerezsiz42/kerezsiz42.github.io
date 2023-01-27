@@ -30,7 +30,8 @@ export const createMessageSchema = z.object({
   type: z.literal("MESSAGE"),
   entryId: z.string(),
   content: z.string(),
-  timestamp: z.number(),
+  createdAt: z.number(),
+  receivedAt: z.number().optional(),
 });
 
 export const dataSchema = z.object({
@@ -95,50 +96,52 @@ export const reducer = async (data: any) => {
   if (!result.success || !identity.value) {
     return;
   }
-  let deciphered;
   try {
     if (result.data.iv) {
-      const keyRecord = await KeyRecords.get(result.data.publicKey);
+      let keyRecord = await KeyRecords.get(result.data.publicKey);
       if (!keyRecord) {
-        await createKey(result.data.publicKey);
+        createKey(result.data.publicKey);
         return;
       }
-      deciphered = await decryptAES(
-        keyRecord.symmetricKey,
-        result.data.iv,
-        result.data.ciphertext
-      );
+      const res = z
+        .discriminatedUnion("type", [createChatSchema, createMessageSchema])
+        .safeParse(
+          await decryptAES(
+            keyRecord.symmetricKey,
+            result.data.iv,
+            result.data.ciphertext
+          )
+        );
+      if (!res.success) {
+        return;
+      }
+      console.log(res.data);
+      switch (res.data.type) {
+        case "MESSAGE":
+          return onCreateMessage(
+            result.data.publicKey,
+            res.data,
+            identity.value.serializedPublicKey
+          );
+        case "CHAT":
+          return onCreateChat(
+            result.data.publicKey,
+            res.data,
+            identity.value.displayName,
+            identity.value.avatar
+          );
+      }
     } else {
-      deciphered = await decryptRSA(
-        identity.value.privateKey,
-        result.data.ciphertext
+      const res = createKeySchema.safeParse(
+        await decryptRSA(identity.value.privateKey, result.data.ciphertext)
       );
+      if (res.success) {
+        console.log(res.data);
+        onCreateKey(result.data.publicKey, res.data);
+      }
+      return;
     }
-  } catch {
-    return;
-  }
-  console.log(deciphered);
-  const payloadResult = z
-    .discriminatedUnion("type", [
-      createChatSchema,
-      createMessageSchema,
-      createKeySchema,
-    ])
-    .safeParse(deciphered);
-  if (!payloadResult.success) {
-    return;
-  }
-  switch (payloadResult.data.type) {
-    case "KEY":
-      return onCreateKey(result.data.publicKey, payloadResult.data);
-    case "MESSAGE":
-      return onCreateMessage(result.data.publicKey, payloadResult.data);
-    case "CHAT":
-      return onCreateChat(
-        result.data.publicKey,
-        payloadResult.data,
-        identity.value.displayName,
-        identity.value.avatar
-      );
+  } catch (err) {
+    console.error(err);
   }
 };

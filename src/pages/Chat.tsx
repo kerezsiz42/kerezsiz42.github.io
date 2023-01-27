@@ -4,10 +4,11 @@ import { Link, useLocation } from "wouter-preact";
 import { Avatar } from "../components/Avatar";
 import { Layout } from "../components/Layout";
 import { createChat } from "../handlers/createChat";
+import { createKey } from "../handlers/createKey";
 import { createMessage } from "../handlers/createMessage";
-import { Chats, Messages } from "../idb";
-import { currentChat } from "../signals";
-import { Identity, Message } from "../types";
+import { Chats, KeyRecords, Messages } from "../idb";
+import { currentChat, messages } from "../signals";
+import { Identity } from "../types";
 
 type ChatPageProps = {
   publicKey: string;
@@ -16,7 +17,6 @@ type ChatPageProps = {
 
 export const ChatPage = ({ publicKey, identity }: ChatPageProps) => {
   const [_, setLocation] = useLocation();
-  const messages = useSignal<Message[]>([]);
   const text = useSignal("");
 
   useEffect(() => {
@@ -25,13 +25,19 @@ export const ChatPage = ({ publicKey, identity }: ChatPageProps) => {
       return;
     }
     const fn = async () => {
-      const foundChat = await Chats.get(publicKey);
-      if (!foundChat) {
-        await createChat(publicKey, identity.displayName, identity.avatar);
-        return;
+      const keyRecord = await KeyRecords.get(publicKey);
+      if (!keyRecord) {
+        await createKey(publicKey);
       }
-      currentChat.value = foundChat;
-      messages.value = await Messages.getBySender(publicKey);
+      currentChat.value = await Chats.get(publicKey);
+      if (!currentChat.value) {
+        currentChat.value = await createChat(
+          publicKey,
+          identity.displayName,
+          identity.avatar
+        );
+      }
+      messages.value = await Messages.getAll(publicKey);
     };
     fn();
   }, []);
@@ -57,10 +63,16 @@ export const ChatPage = ({ publicKey, identity }: ChatPageProps) => {
           </Link>
         </div>
       </div>
-      <div className="flex-1 flex flex-col">
-        {messages.value.map((message) => (
-          <span className="bg-blue-500 rounded-2xl p-2 m-2">
-            {message.content}
+      <div className="flex-1 flex flex-col-reverse overflow-auto w-full">
+        {messages.value.map((m) => (
+          <span
+            className={`rounded-2xl p-2 m-2 ${
+              publicKey === m.sender
+                ? "bg-blue-500 self-end"
+                : "bg-slate-600 self-start"
+            }`}
+          >
+            {m.content}
           </span>
         ))}
       </div>
@@ -91,7 +103,7 @@ export const ChatPage = ({ publicKey, identity }: ChatPageProps) => {
             text.value = "";
           }}
         >
-          <i className="fa-solid fa-paper-plane py-2 text-2xl pr-3 pl-6 cursor-pointer outline-none"></i>
+          <i className="fa-solid fa-paper-plane py-2 text-2xl pr-3 pl-6 cursor-pointer focus:outline-none"></i>
         </button>
       </div>
     </Layout>
