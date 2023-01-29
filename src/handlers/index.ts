@@ -44,7 +44,7 @@ export const send = async (
   destinationPublicKey: string,
   data: z.infer<typeof dataSchema>
 ) => {
-  const body = JSON.stringify(data);
+  const body = new Blob([JSON.stringify(data)], { type: "application/json" });
   const url = `https://noti-relay.deno.dev?id=${encodeURIComponent(
     destinationPublicKey
   )}`;
@@ -91,8 +91,8 @@ export const sendWithAES = async (
   await send(destinationPublicKey, data);
 };
 
-export const reducer = async (data: any) => {
-  const result = dataSchema.safeParse(data);
+export const reducer = async (data: Blob) => {
+  const result = dataSchema.safeParse(JSON.parse(await data.text()));
   if (!result.success || !identity.value) {
     return;
   }

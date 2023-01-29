@@ -68,8 +68,8 @@ export const ChatPage = ({ publicKey, identity }: ChatPageProps) => {
           <span
             className={`rounded-2xl p-2 m-2 ${
               publicKey === m.sender
-                ? "bg-blue-500 self-end"
-                : "bg-slate-600 self-start"
+                ? "bg-slate-600 self-start"
+                : "bg-blue-500 self-end"
             }`}
           >
             {m.content}
