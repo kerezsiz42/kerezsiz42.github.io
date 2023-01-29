@@ -8,7 +8,7 @@ export class ReconnectingWebSocket {
   private previousIsConnected: boolean;
   private retryDelay: number;
   private onStateChange?: (isConnected: boolean) => void;
-  private onMessage?: (message: Blob) => void;
+  private onMessage?: (message: string) => void;
   private shouldBeOpen: boolean;
 
   constructor(signal?: AbortSignal) {
@@ -25,7 +25,7 @@ export class ReconnectingWebSocket {
   public connect(
     url: string | URL,
     onStateChange: (isConnected: boolean) => void,
-    onMessage: (message: Blob) => void | Promise<void>
+    onMessage: (message: string) => void | Promise<void>
   ): void {
     this.shouldBeOpen = true;
     this.ws = this._connect(url);
@@ -48,7 +48,7 @@ export class ReconnectingWebSocket {
       this.setState(true);
       this.retryDelay = STARTING_RETRY_DELAY_MS;
     };
-    ws.onmessage = (e: MessageEvent<Blob>) => {
+    ws.onmessage = (e: MessageEvent<string>) => {
       this.onMessage?.(e.data);
     };
     ws.onclose = () => {
@@ -68,7 +68,7 @@ export class ReconnectingWebSocket {
     return ws;
   }
 
-  public send(data: Blob) {
+  public send(data: string) {
     this.ws?.send(data);
   }
 }
