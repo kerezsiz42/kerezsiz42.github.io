@@ -103,15 +103,14 @@ export const reducer = async (data: string) => {
         createKey(result.data.publicKey);
         return;
       }
+      const decryted = await decryptAES(
+        keyRecord.symmetricKey,
+        result.data.iv,
+        result.data.ciphertext
+      );
       const res = z
         .discriminatedUnion("type", [createChatSchema, createMessageSchema])
-        .safeParse(
-          await decryptAES(
-            keyRecord.symmetricKey,
-            result.data.iv,
-            result.data.ciphertext
-          )
-        );
+        .safeParse(decryted);
       if (!res.success) {
         return;
       }
@@ -132,14 +131,15 @@ export const reducer = async (data: string) => {
           );
       }
     } else {
-      const res = createKeySchema.safeParse(
-        await decryptRSA(identity.value.privateKey, result.data.ciphertext)
+      const decryted = await decryptRSA(
+        identity.value.privateKey,
+        result.data.ciphertext
       );
+      const res = createKeySchema.safeParse(decryted);
       if (res.success) {
         console.log(res.data);
         onCreateKey(result.data.publicKey, res.data);
       }
-      return;
     }
   } catch (err) {
     console.error(err);

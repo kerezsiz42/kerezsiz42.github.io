@@ -22,7 +22,7 @@ export const onCreateMessage = async (
   const message: Message = {
     sender: serializedPublicKey,
     recipient: ownSerializedPublicKey,
-    content: payload.content,
+    content: decodeURIComponent(payload.content),
     createdAt: payload.createdAt,
     entryId: payload.entryId,
     receivedAt,

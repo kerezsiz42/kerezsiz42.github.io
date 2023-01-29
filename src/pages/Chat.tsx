@@ -8,7 +8,7 @@ import { createKey } from "../handlers/createKey";
 import { createMessage } from "../handlers/createMessage";
 import { Chats, KeyRecords, Messages } from "../idb";
 import { currentChat, messages } from "../signals";
-import { Identity } from "../types";
+import { Identity, KeyRecord } from "../types";
 
 type ChatPageProps = {
   publicKey: string;
@@ -25,17 +25,15 @@ export const ChatPage = ({ publicKey, identity }: ChatPageProps) => {
       return;
     }
     const fn = async () => {
-      const keyRecord = await KeyRecords.get(publicKey);
-      if (!keyRecord) {
-        await createKey(publicKey);
+      let keyRecord: KeyRecord | undefined;
+      while (!keyRecord) {
+        keyRecord =
+          (await KeyRecords.get(publicKey)) || (await createKey(publicKey));
       }
-      currentChat.value = await Chats.get(publicKey);
-      if (!currentChat.value) {
-        currentChat.value = await createChat(
-          publicKey,
-          identity.displayName,
-          identity.avatar
-        );
+      while (!currentChat.value) {
+        currentChat.value =
+          (await Chats.get(publicKey)) ||
+          (await createChat(publicKey, identity.displayName, identity.avatar));
       }
       messages.value = await Messages.getAll(publicKey);
     };
@@ -65,15 +63,30 @@ export const ChatPage = ({ publicKey, identity }: ChatPageProps) => {
       </div>
       <div className="flex-1 flex flex-col-reverse overflow-auto w-full">
         {messages.value.map((m) => (
-          <span
-            className={`rounded-2xl p-2 m-2 ${
-              publicKey === m.sender
-                ? "bg-slate-600 self-start"
-                : "bg-blue-500 self-end"
-            }`}
+          <div
+            className={`${
+              publicKey === m.sender ? "self-start" : "self-end"
+            } flex items-center`}
           >
-            {m.content}
-          </span>
+            {publicKey === m.sender ? (
+              <Avatar
+                alt={currentChat.value?.displayName || "User"}
+                src={currentChat.value?.avatar}
+                size={32}
+              />
+            ) : null}
+            <span
+              className={`rounded-2xl p-2 m-2 ${
+                publicKey === m.sender
+                  ? "bg-slate-600"
+                  : m.receivedAt
+                  ? "bg-blue-500"
+                  : "bg-orange-600"
+              }`}
+            >
+              {m.content}
+            </span>
+          </div>
         ))}
       </div>
       <div className="border-gray-500 flex items-center border-t py-4 px-2 w-full">

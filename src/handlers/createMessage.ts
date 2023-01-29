@@ -24,7 +24,7 @@ export const createMessage = async (
   }
   const createMessagePayload: z.infer<typeof createMessageSchema> = {
     type: "MESSAGE",
-    content,
+    content: encodeURIComponent(content),
     createdAt,
     entryId,
   };

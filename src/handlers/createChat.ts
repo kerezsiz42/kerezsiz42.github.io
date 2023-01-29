@@ -19,9 +19,5 @@ export const createChat = async (
     avatar,
   };
   await sendWithAES(serializedPublicKey, createChatPayload);
-  const chat = await chatAwaiter.waitFor(entryId, 10_000);
-  if (!chat) {
-    throw new Error("Failed to create new chat with peer.");
-  }
-  return chat;
+  return await chatAwaiter.waitFor(entryId, 10_000);
 };

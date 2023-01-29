@@ -15,9 +15,5 @@ export const createKey = async (serializedPublicKey: string) => {
     symmetricKey: await exportSymmetricKey(symmetricKey),
   };
   await sendWithRSA(serializedPublicKey, createKeyPayload);
-  const keyRecord = await keyRecordAwaiter.waitFor(entryId, 10_000);
-  if (!keyRecord) {
-    throw new Error("Failed to get symmetric key from peer.");
-  }
-  return keyRecord;
+  return await keyRecordAwaiter.waitFor(entryId, 10_000);
 };
