@@ -38,7 +38,7 @@ export const ChatPage = ({ publicKey, identity }: ChatPageProps) => {
       messages.value = await Messages.getAll(publicKey);
     };
     fn();
-  }, []);
+  }, [currentChat.value]);
 
   return (
     <Layout>
@@ -66,17 +66,17 @@ export const ChatPage = ({ publicKey, identity }: ChatPageProps) => {
           <div
             className={`${
               publicKey === m.sender ? "self-start" : "self-end"
-            } flex items-center`}
+            } flex items-center m-2`}
           >
             {publicKey === m.sender ? (
               <Avatar
                 alt={currentChat.value?.displayName || "User"}
                 src={currentChat.value?.avatar}
-                size={32}
+                size={30}
               />
             ) : null}
             <span
-              className={`rounded-2xl p-2 m-2 ${
+              className={`rounded-2xl p-2 ${
                 publicKey === m.sender
                   ? "bg-slate-600"
                   : m.receivedAt
@@ -105,12 +105,13 @@ export const ChatPage = ({ publicKey, identity }: ChatPageProps) => {
         <button
           type="button"
           onClick={async () => {
-            if (text.value === "") {
+            const trimmed = text.value.trim();
+            if (trimmed === "") {
               return;
             }
             await createMessage(
               publicKey,
-              text.value,
+              trimmed,
               identity.serializedPublicKey
             );
             text.value = "";

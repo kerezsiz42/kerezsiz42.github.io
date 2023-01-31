@@ -17,7 +17,7 @@ export const onCreateChat = async (
   }
   const chat: Chat = {
     serializedPublicKey,
-    displayName: payload.displayName,
+    displayName: decodeURIComponent(payload.displayName),
     entryId: payload.entryId,
   };
   await Chats.put(chat);
@@ -26,7 +26,7 @@ export const onCreateChat = async (
   const responsePayload: z.infer<typeof createChatSchema> = {
     type: payload.type,
     entryId: payload.entryId,
-    displayName,
+    displayName: encodeURIComponent(displayName),
     avatar,
   };
   await sendWithAES(serializedPublicKey, responsePayload);

@@ -15,7 +15,7 @@ export const createChat = async (
   const createChatPayload: z.infer<typeof createChatSchema> = {
     type: "CHAT",
     entryId,
-    displayName,
+    displayName: encodeURIComponent(displayName),
     avatar,
   };
   await sendWithAES(serializedPublicKey, createChatPayload);
