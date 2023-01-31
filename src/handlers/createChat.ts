@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { createChatSchema, sendWithAES } from ".";
 import { AwaitableEvents } from "../AwaitableEvents";
-import { Chats } from "../idb";
 import { Chat } from "../types";
 
 export const chatAwaiter = new AwaitableEvents<Chat>();

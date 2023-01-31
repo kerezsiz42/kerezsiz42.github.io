@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createMessageSchema, sendWithAES } from ".";
-import { Messages } from "../idb";
+import { Chats, Messages } from "../idb";
 import { currentChat, messages } from "../signals";
 import { Message } from "../types";
 
@@ -28,6 +28,21 @@ export const onCreateMessage = async (
     receivedAt,
   };
   await Messages.put(message);
+  const chat = await Chats.get(message.sender);
+  if (chat && currentChat.value?.serializedPublicKey !== message.sender) {
+    const notification = new Notification(
+      `Noti message from ${chat.displayName}:`,
+      {
+        body: message.content,
+        icon: `https://ui-avatars.com/api/?name=${chat.displayName}&rounded=true&format=svg&background=random`,
+      }
+    );
+    notification.onclick = () =>
+      (window.location.href = `${location.protocol}//${
+        location.host
+      }/chat/${encodeURIComponent(message.sender)}`);
+  }
+
   if (currentChat.value?.serializedPublicKey === serializedPublicKey) {
     messages.value = await Messages.getAll(serializedPublicKey);
   }

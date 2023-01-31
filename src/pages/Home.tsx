@@ -1,6 +1,12 @@
 import { Layout } from "../components/Layout";
 import { Link } from "wouter-preact";
-import { chats, connected, deleteIdentity, downloadIdentity } from "../signals";
+import {
+  chats,
+  connected,
+  currentChat,
+  deleteIdentity,
+  downloadIdentity,
+} from "../signals";
 import { Chevron } from "../components/Chevron";
 import { Menu } from "../components/Menu";
 import { useSignal } from "@preact/signals";
@@ -8,6 +14,7 @@ import { ChatList } from "../components/ChatList";
 
 export const HomePage = () => {
   const enabled = useSignal<boolean>(false);
+  currentChat.value = undefined;
 
   return (
     <Layout>

@@ -12,6 +12,10 @@ import { ReconnectingWebSocket } from "./ReconnectingWebSocket";
 import { reducer } from "./handlers";
 
 export const App = () => {
+  if (Notification.permission === "default") {
+    Notification.requestPermission();
+  }
+
   useEffect(() => {
     const fn = async () => {
       loading.value = true;
