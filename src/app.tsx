@@ -12,6 +12,7 @@ import { ReconnectingWebSocket } from "./ReconnectingWebSocket";
 import { reducer } from "./handlers";
 
 export const App = () => {
+  navigator.serviceWorker.register("/sw.js");
   if (Notification.permission === "default") {
     Notification.requestPermission();
   }

@@ -30,17 +30,17 @@ export const onCreateMessage = async (
   await Messages.put(message);
   const chat = await Chats.get(message.sender);
   if (chat && currentChat.value?.serializedPublicKey !== message.sender) {
-    const notification = new Notification(
+    const registration = await navigator.serviceWorker.ready;
+    await registration.showNotification(
       `Noti message from ${chat.displayName}:`,
       {
         body: message.content,
         icon: `https://ui-avatars.com/api/?name=${chat.displayName}&rounded=true&format=svg&background=random`,
+        data: `${location.protocol}//${location.host}/chat/${encodeURIComponent(
+          message.sender
+        )}`,
       }
     );
-    notification.onclick = () =>
-      (window.location.href = `${location.protocol}//${
-        location.host
-      }/chat/${encodeURIComponent(message.sender)}`);
   }
 
   if (currentChat.value?.serializedPublicKey === serializedPublicKey) {
