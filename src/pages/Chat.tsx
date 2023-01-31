@@ -30,15 +30,18 @@ export const ChatPage = ({ publicKey, identity }: ChatPageProps) => {
         keyRecord =
           (await KeyRecords.get(publicKey)) || (await createKey(publicKey));
       }
+      currentChat.value = await Chats.get(publicKey);
       while (!currentChat.value) {
-        currentChat.value =
-          (await Chats.get(publicKey)) ||
-          (await createChat(publicKey, identity.displayName, identity.avatar));
+        currentChat.value = await createChat(
+          publicKey,
+          identity.displayName,
+          identity.avatar
+        );
       }
       messages.value = await Messages.getAll(publicKey);
     };
     fn();
-  }, [currentChat.value]);
+  }, [publicKey]);
 
   return (
     <Layout>
@@ -66,7 +69,7 @@ export const ChatPage = ({ publicKey, identity }: ChatPageProps) => {
           <div
             className={`${
               publicKey === m.sender ? "self-start" : "self-end"
-            } flex items-center m-2`}
+            } flex items-center m-2 max-w-[80%]`}
           >
             {publicKey === m.sender ? (
               <Avatar
@@ -76,7 +79,7 @@ export const ChatPage = ({ publicKey, identity }: ChatPageProps) => {
               />
             ) : null}
             <span
-              className={`rounded-2xl p-2 ${
+              className={`rounded-2xl p-2 ml-2 ${
                 publicKey === m.sender
                   ? "bg-slate-600"
                   : m.receivedAt
