@@ -39,6 +39,7 @@ export const onCreateMessage = async (
         data: `${location.protocol}//${location.host}/chat/${encodeURIComponent(
           message.sender
         )}`,
+        vibrate: [50],
       }
     );
   }

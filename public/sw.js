@@ -9,5 +9,5 @@ const sw = self;
 
 sw.addEventListener("notificationclick", (e) => {
   e.notification.close();
-  console.log(e.notification.data);
+  sw.clients.openWindow(e.notification.data);
 });

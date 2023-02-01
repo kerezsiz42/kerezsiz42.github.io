@@ -27,6 +27,15 @@ export const Menu = ({
         <Button onClick={onEdit}>
           Edit <i className="fa-regular fa-pen-to-square"></i>
         </Button>
+        <Button
+          onClick={() => {
+            if (Notification.permission === "default") {
+              Notification.requestPermission();
+            }
+          }}
+        >
+          Enable notifications
+        </Button>
         <Button onClick={onSignOut}>
           Sign out <i className="fa-solid fa-right-from-bracket"></i>
         </Button>

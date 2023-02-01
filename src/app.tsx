@@ -13,9 +13,6 @@ import { reducer } from "./handlers";
 
 export const App = () => {
   navigator.serviceWorker.register("/sw.js");
-  if (Notification.permission === "default") {
-    Notification.requestPermission();
-  }
 
   useEffect(() => {
     const fn = async () => {
