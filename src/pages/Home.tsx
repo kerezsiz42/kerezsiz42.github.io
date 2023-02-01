@@ -6,6 +6,7 @@ import {
   currentChat,
   deleteIdentity,
   downloadIdentity,
+  messages,
 } from "../signals";
 import { Chevron } from "../components/Chevron";
 import { Menu } from "../components/Menu";
@@ -15,6 +16,7 @@ import { ChatList } from "../components/ChatList";
 export const HomePage = () => {
   const enabled = useSignal<boolean>(false);
   currentChat.value = undefined;
+  messages.value = [];
 
   return (
     <Layout>
