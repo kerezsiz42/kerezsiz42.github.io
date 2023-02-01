@@ -7,6 +7,10 @@ export default defineConfig({
   plugins: [
     preact(),
     VitePWA({
+      srcDir: "src",
+      filename: "sw.ts",
+      strategies: "injectManifest",
+      injectManifest: { injectionPoint: undefined },
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "apple-touch-icon.png"],
       manifest: {
