@@ -1,13 +1,1 @@
-// @ts-check
-/// <reference no-default-lib="false"/>
-/// <reference lib="ES2015" />
-/// <reference lib="webworker" />
-
-/** @type {ServiceWorkerGlobalScope} */
-// @ts-ignore
-const sw = self;
-
-sw.addEventListener("notificationclick", (e) => {
-  e.notification.close();
-  sw.clients.openWindow(e.notification.data);
-});
+if(!self.define){let e,i={};const n=(n,r)=>(n=new URL(n+".js",r).href,i[n]||new Promise((i=>{if("document"in self){const e=document.createElement("script");e.src=n,e.onload=i,document.head.appendChild(e)}else e=n,importScripts(n),i()})).then((()=>{let e=i[n];if(!e)throw new Error(`Module ${n} didn’t register its module`);return e})));self.define=(r,c)=>{const s=e||("document"in self?document.currentScript.src:"")||location.href;if(i[s])return;let o={};const t=e=>n(e,s),d={module:{uri:s},exports:o,require:t};i[s]=Promise.all(r.map((e=>d[e]||t(e)))).then((e=>(c(...e),o)))}}define(["./workbox-3625d7b0"],(function(e){"use strict";self.skipWaiting(),e.clientsClaim(),e.precacheAndRoute([{url:"assets/index-2e6ec5cc.js",revision:null},{url:"assets/index-535fd4b9.css",revision:null},{url:"index.html",revision:"f8190cafbf03052df202708735f20c82"},{url:"registerSW.js",revision:"1872c500de691dce40960bb85481de07"},{url:"favicon.ico",revision:"2b004d4f06a52f448e1c92abe4b00da7"},{url:"apple-touch-icon.png",revision:"2aee70e87cb114ad2dfa817badecf029"},{url:"android-chrome-192x192.png",revision:"f5a35306bba3585837fcac531a05316d"},{url:"android-chrome-512x512.png",revision:"3ccd3eab2b218b234bf804c8c9e04aec"},{url:"manifest.webmanifest",revision:"11c0568f1e535d4acccf9359f7115b92"}],{}),e.cleanupOutdatedCaches(),e.registerRoute(new e.NavigationRoute(e.createHandlerBoundToURL("index.html")))}));
